@@ -77,6 +77,8 @@ export const useInsightsStore = defineStore('insights', {
       } finally {
         this.isRefreshing = false;
       }
+
+      return this.items as Insight[];
     },
 
     // async refreshBackground() {

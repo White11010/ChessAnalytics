@@ -22,6 +22,15 @@ export const useUserStore = defineStore('user', {
       this.isLoading = true;
       this.user = await invoke('fetch_lichess_player');
       this.isLoading = false;
+
+      return this.user;
+    },
+    async syncMe() {
+      this.isLoading = true;
+      this.user = await invoke('sync_me');
+      this.isLoading = false;
+
+      return this.user as User;
     },
   },
 });

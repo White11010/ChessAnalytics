@@ -206,6 +206,7 @@ pub fn get_games_by_username(
     for row in rows {
         items.push(row?);
     }
+    println!("{}", items.len());
 
     Ok(items)
 }

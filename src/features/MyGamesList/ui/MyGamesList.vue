@@ -1,30 +1,31 @@
 <template>
-    <v-data-table :headers="headers" :items="gamesStore.games" />
+  <v-data-table v-if="games.length" :headers="headers" :items="games" />
 </template>
 
 <script setup lang="ts">
-import { useGamesStore } from '@/entities/game';
+import { useSyncGamesQuery } from '@/entities/game';
 
-const gamesStore = useGamesStore()
+const { games } = useSyncGamesQuery();
+
 const headers = [
-    {
-        key: 'speed',
-        title: '',
-        width: '96px'
-    },
-    {
-        key: 'opponent_name',
-        title: 'Opponent'
-    },
-    {
-        key: 'player_result',
-        title: 'Result',
-        width: '48px'
-    },
-    {
-        key: 'created_at',
-        title: 'Date',
-        width: '144px'
-    },
-]
+  {
+    key: 'speed',
+    title: '',
+    width: '96px',
+  },
+  {
+    key: 'opponent_name',
+    title: 'Opponent',
+  },
+  {
+    key: 'player_result',
+    title: 'Result',
+    width: '48px',
+  },
+  {
+    key: 'created_at',
+    title: 'Date',
+    width: '144px',
+  },
+];
 </script>

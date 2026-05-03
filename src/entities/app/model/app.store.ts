@@ -19,7 +19,6 @@ export const useAppStore = defineStore('app', {
       const userStore = useUserStore();
 
       const res = await invoke<BootstrapState>('bootstrap');
-      console.log(res);
 
       if (res.state === 'Unauthorized') {
         this.status = 'ready';

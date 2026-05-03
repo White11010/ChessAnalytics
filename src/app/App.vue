@@ -48,6 +48,7 @@
           link
           title="Settings"
           prepend-icon="mdi-cog"
+          @click="router?.push('/settings')"
         ></v-list-item>
       </template>
     </v-navigation-drawer>
@@ -72,5 +73,16 @@ const router = useRouter();
 <style>
 .button--medium {
   height: 3rem;
+}
+.button-width-12 {
+  width: 12rem;
+}
+
+:root {
+  --app-font-scale: 1;
+}
+
+html {
+  font-size: calc(16px * var(--app-font-scale));
 }
 </style>

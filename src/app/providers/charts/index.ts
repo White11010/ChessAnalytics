@@ -1,0 +1,1 @@
+export { VueApexCharts } from './chartsProvider';

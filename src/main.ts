@@ -1,31 +1,26 @@
-import 'vuetify/styles';
-import 'unfonts.css';
-import '@mdi/font/css/materialdesignicons.css'; // Ensure you are using css-loader
-
 import { createApp } from 'vue';
-import { createVuetify } from 'vuetify';
-import * as components from 'vuetify/components';
-import * as directives from 'vuetify/directives';
-import { aliases, mdi } from 'vuetify/iconsets/mdi';
 
+import App from '@/app/App.vue';
+import { initTheme, removePreloader } from '@/app/init';
+import { VueApexCharts } from '@/app/providers/charts';
+import { queryClient, VueQueryPlugin } from '@/app/providers/query';
 import { router } from '@/app/providers/router';
+import { pinia } from '@/app/providers/store';
+import { vuetify } from '@/app/providers/vuetify';
 
-import App from './App.vue';
-import { pinia } from './app/providers/store';
+const app = createApp(App);
 
-const vuetify = createVuetify({
-  components,
-  directives,
-  icons: {
-    defaultSet: 'mdi',
-    aliases,
-    sets: {
-      mdi,
-    },
-  },
-});
+app
+  .use(pinia)
+  .use(router)
+  .use(vuetify)
+  .use(VueQueryPlugin, {
+    queryClient,
+  })
+  .use(VueApexCharts);
 
-createApp(App).use(pinia).use(router).use(vuetify).mount('#app');
+initTheme(vuetify);
 
-const loader = document.getElementById('preloader');
-if (loader) loader.remove();
+app.mount('#app');
+
+removePreloader();

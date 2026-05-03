@@ -35,7 +35,7 @@ function makeMove(move: { from: string; to: string }): void {
 <style lang="scss" scoped>
 .analysis-page {
   padding: 2rem;
-  max-width: 940px;
+  max-width: 58rem;
   flex: 1;
   height: 100%;
 }

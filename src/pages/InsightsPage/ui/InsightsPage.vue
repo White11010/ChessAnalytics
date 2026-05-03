@@ -11,7 +11,7 @@ import { InsightsBlock } from '@/widgets/InsightsBlock';
 <style scoped>
 .insights-page {
   padding: 2rem;
-  max-width: 940px;
+  max-width: 58rem;
   flex: 1;
   height: 100%;
 }

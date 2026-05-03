@@ -1,5 +1,6 @@
 <template>
   <v-card
+    v-if="appStore.status === 'ready' && userStore.user === null"
     title="Connect your chess account"
     subtitle="Import your games from Lichess to start querying"
   >
@@ -16,17 +17,20 @@
       </form>
     </v-card-text>
   </v-card>
+  <p v-if="appStore.status === 'loading'">Loading</p>
 </template>
 
 <script setup lang="ts">
 import { invoke } from '@tauri-apps/api/core';
 import { ref } from 'vue';
 
+import { useAppStore } from '@/entities/app';
 import type { User } from '@/entities/user';
 import { useUserStore } from '@/entities/user';
 
 const isLoading = ref(false);
 const userStore = useUserStore();
+const appStore = useAppStore();
 
 const tokenInput = ref<null | string>(null);
 async function saveToken(): Promise<void> {
@@ -45,6 +49,10 @@ function onSubmit(): void {
   if (tokenInput.value) {
     saveToken();
   }
+}
+
+if (!userStore.user) {
+  appStore.bootstrap();
 }
 </script>
 
