@@ -491,6 +491,7 @@ name = "chessanalytics"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "once_cell",
  "reqwest",
  "rusqlite",
  "serde",

@@ -57,8 +57,7 @@ pub async fn fetch_games(app: &AppHandle, username: &str) -> Result<String, Stri
     let url = format!(
         concat!(
             "https://lichess.org/api/games/user/{}",
-            "?max=100",
-            "&moves=true",
+            "?moves=true",
             "&pgnInJson=true",
             "&evals=true",
             "&accuracy=true",

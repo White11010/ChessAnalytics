@@ -7,6 +7,9 @@ import { queryClient, VueQueryPlugin } from '@/app/providers/query';
 import { router } from '@/app/providers/router';
 import { pinia } from '@/app/providers/store';
 import { vuetify } from '@/app/providers/vuetify';
+import 'chessground/assets/chessground.base.css';
+import 'chessground/assets/chessground.brown.css';
+import 'chessground/assets/chessground.cburnett.css';
 
 const app = createApp(App);
 

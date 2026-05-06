@@ -23,7 +23,9 @@ pub fn run() {
             commands::games::get_games,
             commands::games::refresh_games_background,
             commands::insights::get_insights,
-            commands::insights::regenerate_insights
+            commands::insights::regenerate_insights,
+            commands::engine::init_engine,
+            commands::engine::analyze_position,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -7,6 +7,12 @@ import vueParser from 'vue-eslint-parser';
 
 export default [
   {
+    env: {
+      browser: true,
+      es2021: true,
+    },
+  },
+  {
     ignores: ['src-tauri/**', 'vite-env.d.ts', 'node_modules/**', 'dist/**', 'coverage/**'],
   },
 

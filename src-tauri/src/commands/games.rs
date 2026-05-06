@@ -10,7 +10,7 @@ pub async fn sync_games(app: AppHandle) -> Result<games::SyncGamesResult, String
 
 #[tauri::command]
 pub fn get_games(app: AppHandle, limit: Option<u32>) -> Result<Vec<Game>, String> {
-    games::get_my_games(app, limit.unwrap_or(100))
+    games::get_my_games(app, limit.unwrap_or(100000))
 }
 
 #[tauri::command]
