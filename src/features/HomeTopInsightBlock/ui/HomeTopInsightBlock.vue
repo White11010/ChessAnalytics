@@ -70,7 +70,6 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 
 import {
@@ -85,7 +84,6 @@ import { useSyncGamesQuery } from '@/entities/game';
 import { useI18n } from '@/shared/lib/i18n';
 
 const { t, te } = useI18n();
-const router = useRouter();
 
 const gamesQuery = useSyncGamesQuery();
 const insightsQuery = useInsightsLoadQuery(gamesQuery.isSuccess);
@@ -101,10 +99,6 @@ watch(
     displayInsight.value = hero ?? null;
   },
   { immediate: true },
-);
-
-const sortedInsights = computed(() =>
-  [...insightsStore.items].sort((a, b) => b.sort_priority - a.sort_priority),
 );
 
 const ins = computed(() => displayInsight.value);
@@ -217,27 +211,6 @@ const metricMain = computed(() => {
 const metricSecondary = computed(() => ins.value?.metric_label?.trim() ?? '');
 
 const metricBlockVisible = computed(() => Boolean(metricMain.value || metricSecondary.value));
-
-const nextDisabled = computed(() => sortedInsights.value.length <= 1);
-
-function goNextInsight(): void {
-  const list = sortedInsights.value;
-  const cur = displayInsight.value;
-  if (list.length === 0) {
-    return;
-  }
-  if (!cur) {
-    displayInsight.value = list[0] ?? null;
-    return;
-  }
-  const idx = list.findIndex((x) => x.id === cur.id);
-  const nextIdx = idx < 0 ? 0 : (idx + 1) % list.length;
-  displayInsight.value = list[nextIdx] ?? null;
-}
-
-function goAllInsights(): void {
-  void router.push({ name: 'Insights' });
-}
 </script>
 
 <style lang="scss" scoped>

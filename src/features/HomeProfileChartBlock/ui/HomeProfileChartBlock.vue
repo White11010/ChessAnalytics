@@ -63,12 +63,14 @@
         <v-row dense class="home-profile-card__layout">
           <v-col cols="12" lg="8" class="d-flex justify-center align-center overflow-visible">
             <!-- ApexCharts Radar: stroke.width must be a number; arrays break radius (NaN) and collapse labels. -->
-            <div class="home-profile-radar-wrap w-100 d-flex justify-center">
+            <div ref="radarWrapRef" class="home-profile-radar-wrap w-100 d-flex justify-center">
+              <!-- width/height не привязываем к ResizeObserver: vue3-apexcharts при их смене делает destroy() и ловит гонку с async init -->
               <apexchart
                 v-if="series.length"
+                ref="apexChartRef"
                 :key="chartKey"
-                width="100%"
-                height="460"
+                :width="RADAR_FALLBACK_W"
+                :height="RADAR_FALLBACK_H"
                 type="radar"
                 :options="chartOptions"
                 :series="series"
@@ -106,10 +108,12 @@
 
 <script setup lang="ts">
 import type { ApexOptions } from 'apexcharts';
+import type { VueApexChartsComponentMethods } from 'vue3-apexcharts';
 
 import { keepPreviousData, useQuery } from '@tanstack/vue-query';
 import { invoke } from '@tauri-apps/api/core';
-import { computed, ref, watch } from 'vue';
+import type { ComponentPublicInstance } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { useTheme } from 'vuetify';
 
 import { useI18n } from '@/shared/lib/i18n';
@@ -118,8 +122,79 @@ import type { PentagonDto, PlayerProfileChartResponse } from '../model/types';
 
 type MetricKey = keyof PentagonDto;
 
+/** Ширина (и базовая сторона viewport) радара в px. */
+const RADAR_SIZE_PX = 440;
+/** Запас по высоте под кольцо подписей осей; внешние поля — padding у `.home-profile-radar-wrap`. */
+const RADAR_EXTRA_H_FOR_LABEL_RING_PX = 44;
+const RADAR_FALLBACK_W = RADAR_SIZE_PX;
+const RADAR_FALLBACK_H = RADAR_SIZE_PX + RADAR_EXTRA_H_FOR_LABEL_RING_PX;
+
 const speed = ref<'bullet' | 'blitz' | 'rapid'>('bullet');
 const chartKey = ref(0);
+
+const radarWrapRef = ref<HTMLElement | null>(null);
+type ApexChartVm = ComponentPublicInstance & VueApexChartsComponentMethods;
+const apexChartRef = ref<ApexChartVm | null>(null);
+
+let radarResizeObserver: ResizeObserver | null = null;
+let radarResizeDebounce: number | null = null;
+
+function clearRadarDebounce() {
+  if (radarResizeDebounce != null) {
+    clearTimeout(radarResizeDebounce);
+    radarResizeDebounce = null;
+  }
+}
+
+function disconnectRadarObserver() {
+  radarResizeObserver?.disconnect();
+  radarResizeObserver = null;
+}
+
+async function resizeRadarToWrap() {
+  const vm = apexChartRef.value;
+  const el = radarWrapRef.value;
+  if (!vm || !el) return;
+  const w = RADAR_SIZE_PX;
+  const h = RADAR_SIZE_PX + RADAR_EXTRA_H_FOR_LABEL_RING_PX;
+  try {
+    await vm.updateOptions({ chart: { width: w, height: h } }, false, false, false);
+  } catch {
+    /* смена key / размонтирование */
+  }
+}
+
+function scheduleRadarResize() {
+  clearRadarDebounce();
+  radarResizeDebounce = window.setTimeout(() => {
+    radarResizeDebounce = null;
+    void resizeRadarToWrap();
+  }, 120);
+}
+
+function attachRadarResizeObserver(rafAttempt = 0) {
+  disconnectRadarObserver();
+  clearRadarDebounce();
+
+  const el = radarWrapRef.value;
+  if (!el || !payload.value || series.value.length === 0) {
+    return;
+  }
+
+  if (!apexChartRef.value) {
+    if (rafAttempt < 20) {
+      requestAnimationFrame(() => attachRadarResizeObserver(rafAttempt + 1));
+    }
+    return;
+  }
+
+  void resizeRadarToWrap();
+
+  if (typeof ResizeObserver !== 'undefined') {
+    radarResizeObserver = new ResizeObserver(() => scheduleRadarResize());
+    radarResizeObserver.observe(el);
+  }
+}
 
 const { t, locale } = useI18n();
 const theme = useTheme();
@@ -201,37 +276,6 @@ function playerRadarChartValues(player: PentagonDto, bench: PentagonDto): number
   });
 }
 
-function radarTooltipHtml(
-  d: PlayerProfileChartResponse,
-  metricIndex: number,
-  seriesIndex: number,
-): string {
-  const key = METRIC_ORDER[metricIndex];
-  if (!key) return '';
-  const title = metricCategoryLabel(metricIndex);
-  const bench = d.benchmark;
-  const bv = Math.round(absBenchMetric(bench, key));
-  if (!d.player) {
-    const v = bv;
-    return `<div class="apexcharts-tooltip-title" style="font-family: inherit">${title}</div>
-<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1">
-  <span>${String(t('home.profileChartLegendAvg', { label: d.bucketLabel }))}: ${v}</span>
-</div>`;
-  }
-  const isPlayerSer = seriesIndex === 0;
-  const pv = Math.round(absPlayerMetric(d.player, bench, key));
-  if (isPlayerSer) {
-    return `<div class="apexcharts-tooltip-title" style="font-family: inherit">${title}</div>
-<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1">
-  <span>${String(t('home.profileChartLegendYours'))}: ${pv}</span>
-</div>`;
-  }
-  return `<div class="apexcharts-tooltip-title" style="font-family: inherit">${title}</div>
-<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1">
-  <span>${String(t('home.profileChartLegendAvg', { label: d.bucketLabel }))}: ${bv}</span>
-</div>`;
-}
-
 /** Stable Apex categories (locale-independent) so axes never reorder relative to series data. */
 function metricCategoryLabel(index: number): string {
   const key = METRIC_ORDER[index];
@@ -262,6 +306,32 @@ const series = computed(() => {
     { name: String(t('home.profileChartLegendYours')), data: playerData },
     { name: String(t('home.profileChartLegendAvg', { label: d.bucketLabel })), data: benchRadar },
   ];
+});
+
+watch(
+  () => [payload.value, series.value.length] as const,
+  async ([p, len]) => {
+    disconnectRadarObserver();
+    clearRadarDebounce();
+    if (!p || len === 0) {
+      return;
+    }
+    await nextTick();
+    requestAnimationFrame(() => attachRadarResizeObserver(0));
+  },
+  { flush: 'post', immediate: true },
+);
+
+watch(chartKey, async () => {
+  disconnectRadarObserver();
+  clearRadarDebounce();
+  await nextTick();
+  requestAnimationFrame(() => attachRadarResizeObserver(0));
+});
+
+onUnmounted(() => {
+  disconnectRadarObserver();
+  clearRadarDebounce();
 });
 
 const accentHexList = computed(() =>
@@ -377,11 +447,18 @@ const chartOptions = computed((): ApexOptions => {
       dropShadow: { enabled: false },
     },
     theme: { mode: isDark.value ? 'dark' : 'light' },
+    grid: {
+      padding: {
+        top: 4,
+        right: 4,
+        bottom: 4,
+        left: 4,
+      },
+    },
     plotOptions: {
       radar: {
-        size: 120,
         offsetX: 0,
-        offsetY: 2,
+        offsetY: 0,
         polygons: {
           strokeColors: outlineSoft.value,
           fill: {
@@ -398,7 +475,7 @@ const chartOptions = computed((): ApexOptions => {
     },
     markers: {
       size: hasPlayer ? [5, 0] : 0,
-      hover: { size: 7 },
+      ...(hasPlayer ? { hover: { size: 5 } } : {}),
       strokeWidth: hasPlayer ? [1, 0] : 0,
       ...(hasPlayer
         ? {
@@ -431,7 +508,8 @@ const chartOptions = computed((): ApexOptions => {
         },
         style: {
           colors: Array(METRIC_ORDER.length).fill(textColor.value),
-          fontSize: '11px',
+          fontSize: '14px',
+          fontWeight: 500,
         },
       },
     },
@@ -449,16 +527,7 @@ const chartOptions = computed((): ApexOptions => {
       },
     ],
     tooltip: {
-      theme: isDark.value ? 'dark' : 'light',
-      shared: false,
-      intersect: true,
-      custom: (opts: { seriesIndex?: number; dataPointIndex?: number }) => {
-        const p = payload.value;
-        if (!p) return '';
-        const si = opts.seriesIndex ?? 0;
-        const di = opts.dataPointIndex ?? 0;
-        return radarTooltipHtml(p, di, si);
-      },
+      enabled: false,
     },
     legend: { show: false },
     dataLabels: {
@@ -470,9 +539,16 @@ const chartOptions = computed((): ApexOptions => {
 
 <style scoped lang="scss">
 .home-profile-radar-wrap {
-  min-width: 560px;
-  max-width: 760px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 400px;
+  min-width: 400px;
+  max-width: 400px;
   overflow: visible;
+}
+
+.home-profile-radar-wrap :deep(.vue-apexcharts) {
+  min-height: 0;
 }
 
 .home-profile-radar-wrap :deep(.apexcharts-canvas),
