@@ -25,7 +25,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import { ref } from 'vue';
 
+import { queryClient } from '@/app/providers/query/queryProvider';
 import { useAppStore } from '@/entities/app';
+import { useGamesSyncStore } from '@/entities/games-sync';
 import type { User } from '@/entities/user';
 import { useUserStore } from '@/entities/user';
 import { useI18n } from '@/shared/lib/i18n';
@@ -35,6 +37,7 @@ const { t } = useI18n();
 const isLoading = ref(false);
 const userStore = useUserStore();
 const appStore = useAppStore();
+const gamesSyncStore = useGamesSyncStore();
 
 const tokenInput = ref<null | string>(null);
 async function saveToken(): Promise<void> {
@@ -43,6 +46,8 @@ async function saveToken(): Promise<void> {
     await invoke('save_token', { token: tokenInput.value });
     const user = await invoke('sync_me');
     userStore.setUser(user as User);
+    gamesSyncStore.hydrateFromUser((user as User).last_sync_completed_at_ms ?? null);
+    void queryClient.invalidateQueries({ queryKey: ['user'] });
   } finally {
     isLoading.value = false;
   }

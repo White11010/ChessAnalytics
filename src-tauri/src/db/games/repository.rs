@@ -1,5 +1,7 @@
 use rusqlite::{params, Connection};
 
+use crate::services::versus_metrics::MetricGameRow;
+
 use super::model::{Game, GameListItem};
 
 pub fn upsert_game(conn: &Connection, game: &Game) -> rusqlite::Result<usize> {
@@ -396,4 +398,120 @@ pub fn get_game_by_id(conn: &Connection, id: &str) -> rusqlite::Result<Option<Ga
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
         Err(e) => Err(e),
     }
+}
+
+/// Last `limit` Lichess rated games at `speed` with completed analysis rows (Versus «you» pentagon slice).
+pub fn versus_self_analyzed_metrics(
+    conn: &Connection,
+    username: &str,
+    user_id: &str,
+    speed: &str,
+    limit: u32,
+) -> rusqlite::Result<Vec<MetricGameRow>> {
+    let mut stmt = conn.prepare(
+        "
+        SELECT
+            ga.accuracy,
+            ga.avg_centipawn_loss,
+            ga.max_advantage_cp,
+            ga.blunders,
+            g.player_result,
+            EXISTS (
+                SELECT 1 FROM game_pattern_tags t
+                WHERE t.game_id = g.id AND t.user_id = ?3 AND t.tag = 'opening_blunder'
+            ),
+            EXISTS (
+                SELECT 1 FROM game_pattern_tags t
+                WHERE t.game_id = g.id AND t.user_id = ?3 AND t.tag = 'endgame_blunder'
+            )
+        FROM games g
+        INNER JOIN game_analyses ga
+            ON ga.game_id = g.id AND ga.user_id = ?3 AND ga.status = 'done'
+        WHERE g.username = ?1
+          AND g.platform = 'Lichess'
+          AND g.rated = 1
+          AND g.speed = ?2
+          AND ga.accuracy IS NOT NULL
+        ORDER BY g.created_at DESC
+        LIMIT ?4
+        ",
+    )?;
+
+    let rows = stmt.query_map(
+        rusqlite::params![username, speed, user_id, limit],
+        |row| {
+            Ok(MetricGameRow {
+                accuracy_raw: row.get(0)?,
+                avg_centipawn_loss: row.get(1)?,
+                max_adv: row.get(2)?,
+                blunders: row.get(3)?,
+                player_result: row.get(4)?,
+                opening_blunder: row.get::<_, i64>(5)? != 0,
+                endgame_blunder: row.get::<_, i64>(6)? != 0,
+            })
+        },
+    )?;
+
+    let mut out = Vec::new();
+    for r in rows {
+        out.push(r?);
+    }
+    Ok(out)
+}
+
+#[derive(Debug, Clone)]
+pub struct OpeningAggregateRow {
+    pub opening_name: String,
+    pub wins: i64,
+    pub losses: i64,
+    pub draws: i64,
+    pub total: i64,
+}
+
+/// Aggregate opening results over the latest `recent_limit` games (before GROUP BY).
+pub fn versus_opening_stats_recent(
+    conn: &Connection,
+    username: &str,
+    speed: &str,
+    recent_limit: u32,
+) -> rusqlite::Result<Vec<OpeningAggregateRow>> {
+    let mut stmt = conn.prepare(
+        "
+        SELECT
+            opening_name,
+            SUM(CASE WHEN player_result = 'win' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN player_result = 'loss' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN player_result = 'draw' THEN 1 ELSE 0 END),
+            COUNT(*)
+        FROM (
+            SELECT opening_name, player_result
+            FROM games
+            WHERE username = ?1
+              AND platform = 'Lichess'
+              AND rated = 1
+              AND speed = ?2
+              AND opening_name IS NOT NULL
+              AND TRIM(opening_name) <> ''
+            ORDER BY created_at DESC
+            LIMIT ?3
+        )
+        GROUP BY opening_name
+        ",
+    )?;
+
+    let rows = stmt.query_map(params![username, speed, recent_limit], |row| {
+        Ok(OpeningAggregateRow {
+            opening_name: row.get(0)?,
+            wins: row.get::<_, i64>(1)?,
+            losses: row.get::<_, i64>(2)?,
+            draws: row.get::<_, i64>(3)?,
+            total: row.get::<_, i64>(4)?,
+        })
+    })?;
+
+    let mut out = Vec::new();
+    for r in rows {
+        out.push(r?);
+    }
+    Ok(out)
 }

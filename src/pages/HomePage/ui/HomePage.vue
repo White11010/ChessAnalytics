@@ -1,7 +1,9 @@
 <template>
   <div class="home-page">
-    <lichess-account-connection />
-    <home-dashboard />
+    <div class="home-page__container">
+      <lichess-account-connection />
+      <home-dashboard />
+    </div>
   </div>
 </template>
 
@@ -12,11 +14,16 @@ import { LichessAccountConnection } from '@/widgets/LichessAccountConnection';
 
 <style scoped>
 .home-page {
-  padding: 0 2rem;
-  max-width: 58rem;
+  width: 100%;
   flex: 1;
-  height: calc(100% - 2rem);
-  overflow: auto;
-  margin: 1rem 0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.home-page__container {
+  padding: 1rem 2rem 2rem;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 </style>

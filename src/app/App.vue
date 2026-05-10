@@ -32,6 +32,14 @@
         prepend-icon="mdi-table-large"
         @click="router?.push('/my-games')"
       ></v-list-item>
+      <v-list-item
+        class="mt-2"
+        :active="route?.name === 'Versus'"
+        link
+        :title="t('layout.navVersus')"
+        prepend-icon="mdi-sword-cross"
+        @click="router?.push('/versus')"
+      ></v-list-item>
       <!-- <v-list-item
         class="mt-2"
         :active="route?.name === 'AnalizeBoard'"
@@ -43,18 +51,32 @@
 
       <template #append>
         <v-list-item
-          class="mb-4"
+          class="mb-1"
           :active="route?.name === 'Settings'"
           link
           :title="t('layout.navSettings')"
           prepend-icon="mdi-cog"
           @click="router?.push('/settings')"
         ></v-list-item>
+        <v-divider class="mx-4 mb-2" />
+        <sidebar-games-sync class="mb-2" />
       </template>
     </v-navigation-drawer>
-    <v-main class="d-flex align-center justify-center">
-      <router-view></router-view>
+    <v-main class="app-main">
+      <div class="app-main__content">
+        <router-view></router-view>
+      </div>
     </v-main>
+    <v-snackbar
+      v-model="snackbarVisible"
+      :color="snackbarColor"
+      :timeout="4200"
+      location="bottom"
+      multi-line
+      @update:model-value="onSnackbarModel"
+    >
+      {{ snackbarMessage }}
+    </v-snackbar>
   </v-layout>
 </template>
 
@@ -63,7 +85,10 @@ import {
   useBackgroundGameAnalysisBridge,
   useBackgroundGameAnalysisOrchestration,
 } from '@/app/init/initBackgroundGameAnalysis';
+import { useGamesAutoSync } from '@/app/init/useGamesAutoSync';
+import { useGamesSyncStore } from '@/entities/games-sync';
 import { useLocaleStore } from '@/entities/locale';
+import { SidebarGamesSync } from '@/features/SidebarGamesSync';
 import { useI18n } from '@/shared/lib/i18n';
 import { storeToRefs } from 'pinia';
 import { watch } from 'vue';
@@ -72,8 +97,17 @@ import { useRoute, useRouter } from 'vuetify/lib/composables/router.mjs';
 
 useBackgroundGameAnalysisBridge();
 useBackgroundGameAnalysisOrchestration();
+useGamesAutoSync();
 
 const { t } = useI18n();
+const gamesSyncStore = useGamesSyncStore();
+const { snackbarVisible, snackbarMessage, snackbarColor } = storeToRefs(gamesSyncStore);
+
+function onSnackbarModel(v: boolean): void {
+  if (!v) {
+    gamesSyncStore.dismissSnackbar();
+  }
+}
 const route = useRoute();
 const router = useRouter();
 
@@ -91,6 +125,17 @@ watch(
 <style scoped>
 .container {
   padding: 2rem;
+}
+
+.app-main {
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.app-main__content {
+  width: 100%;
+  height: 100%;
 }
 </style>
 <style>

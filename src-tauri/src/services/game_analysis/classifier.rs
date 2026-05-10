@@ -104,6 +104,45 @@ pub fn classify_player_moves(
     Ok(out)
 }
 
+/// Same player-move swings as [`classify_player_moves`], but without per-move Stockfish lookups
+/// (no best-move / brilliant detection). Intended for Versus-style batch scans.
+pub fn classify_player_moves_from_eval(
+    uci_moves: &[String],
+    eval_history: &[i32],
+    player_is_white: bool,
+) -> Result<Vec<ClassifiedMove>, String> {
+    if eval_history.len() != uci_moves.len() + 1 {
+        return Err("eval_history length mismatch".into());
+    }
+
+    let mut out = Vec::new();
+
+    for k in 0..uci_moves.len() {
+        if !is_player_move(k, player_is_white) {
+            continue;
+        }
+
+        let eval_before = eval_history[k];
+        let eval_after = eval_history[k + 1];
+        let swing = eval_after - eval_before;
+        let kind = classify_swing(swing);
+        let display_move_number = (k as i32) / 2 + 1;
+
+        out.push(ClassifiedMove {
+            half_move_index: k,
+            display_move_number,
+            uci: uci_moves[k].clone(),
+            kind,
+            eval_before,
+            eval_after,
+            swing_cp: swing,
+            best_move_uci: None,
+        });
+    }
+
+    Ok(out)
+}
+
 pub fn count_move_kinds(classified: &[ClassifiedMove]) -> (i32, i32, i32) {
     let mut b = 0;
     let mut m = 0;

@@ -1,6 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { defineStore } from 'pinia';
 
+import { queryClient } from '@/app/providers/query/queryProvider';
+import { useGamesSyncStore } from '@/entities/games-sync';
 import type { User } from '@/entities/user';
 import { useUserStore } from '@/entities/user';
 
@@ -24,12 +26,15 @@ export const useAppStore = defineStore('app', {
         this.status = 'ready';
 
         userStore.setUser(null);
+        useGamesSyncStore().reset();
         return;
       }
 
       userStore.setUser(res.data.user);
+      useGamesSyncStore().hydrateFromUser(res.data.user.last_sync_completed_at_ms ?? null);
       this.isStale = res.data.is_stale;
       this.status = 'ready';
+      void queryClient.invalidateQueries({ queryKey: ['user'] });
 
       //   // optional UI refresh hint
       //   if (this.isStale) {
@@ -43,6 +48,7 @@ export const useAppStore = defineStore('app', {
       try {
         const res = await invoke('sync_me');
         userStore.setUser(res as User | null);
+        useGamesSyncStore().hydrateFromUser((res as User).last_sync_completed_at_ms ?? null);
       } catch (e) {
         console.error(e);
       }

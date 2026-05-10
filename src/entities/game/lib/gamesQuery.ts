@@ -13,9 +13,12 @@ export function useSyncGamesQuery(): UseQueryReturnType<Game[], Error> & { games
   const query = useQuery<Game[]>({
     queryKey: ['games'],
 
-    queryFn: () => store.sync(),
+    queryFn: async () => {
+      await store.loadFromDb();
+      return [...store.games];
+    },
 
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 60 * 60,
   });
 
   return {

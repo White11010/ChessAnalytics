@@ -15,7 +15,8 @@ pub async fn sync_user(app: AppHandle) -> Result<User, String> {
     repository::upsert_user(&conn, &user)?;
     repository::set_active_user(&conn, &user.id)?;
 
-    Ok(user)
+    repository::get_active_user(&conn)?
+        .ok_or_else(|| "Active user not found after sync".to_string())
 }
 
 pub fn get_me(app: &AppHandle) -> Result<Option<User>, String> {
@@ -32,5 +33,6 @@ pub async fn sync_me(app: &AppHandle) -> Result<User, String> {
     repository::upsert_user(&conn, &user)?;
     repository::set_active_user(&conn, &user.id)?;
 
-    Ok(user)
+    repository::get_active_user(&conn)?
+        .ok_or_else(|| "Active user not found after sync".to_string())
 }

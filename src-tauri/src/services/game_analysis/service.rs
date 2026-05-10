@@ -12,7 +12,8 @@ use crate::db::users::repository as users_repo;
 use crate::services::engine::stockfish::{ensure_engine_started, get_engine};
 
 use super::classifier::{
-    accuracy_from_acpl, avg_centipawn_loss, classify_player_moves, count_move_kinds, max_min_eval,
+    accuracy_from_acpl, avg_centipawn_loss, classify_player_moves, classify_player_moves_from_eval,
+    count_move_kinds, max_min_eval,
 };
 use super::engine_runner::analyze_eval_history;
 use super::key_insight::build_key_insight;
@@ -20,6 +21,57 @@ use super::key_moments::pick_key_moments;
 use super::model::{GameAnalysisFull, KeyInsight, SimilarGames, SystemConnection};
 use super::pattern_detector::detect_patterns;
 use super::system_connection::build_system_connection;
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct TransientAnalysisResult {
+    pub accuracy: f64,
+    pub avg_centipawn_loss: f64,
+    pub max_advantage_cp: i32,
+    pub min_advantage_cp: i32,
+    pub blunders: i32,
+    pub pattern_tags: Vec<String>,
+}
+
+pub fn analyze_game_transient(
+    app: &AppHandle,
+    game: &crate::db::games::model::Game,
+    depth: u8,
+) -> Result<TransientAnalysisResult, String> {
+    let moves_str = game.moves.as_deref().unwrap_or("").trim();
+    if moves_str.is_empty() {
+        return Err("No moves stored for this game".into());
+    }
+
+    let uci_moves: Vec<String> = moves_str.split_whitespace().map(|s| s.to_string()).collect();
+    let player_is_white = game.player_color == "white";
+
+    ensure_engine_started(app)?;
+
+    let global = get_engine();
+    let mut guard = global.lock().map_err(|_| "Failed to lock engine mutex")?;
+    let engine = guard.as_mut().expect("engine present after ensure_engine_started");
+
+    let eval_history = analyze_eval_history(engine, &uci_moves, player_is_white, depth)?;
+    let classified = classify_player_moves_from_eval(&uci_moves, &eval_history, player_is_white)?;
+
+    let acpl = avg_centipawn_loss(&classified);
+    let accuracy = accuracy_from_acpl(acpl);
+    let (b, _m, _i) = count_move_kinds(&classified);
+    let (max_adv, min_adv) = max_min_eval(&eval_history);
+
+    let tags = detect_patterns(game, &eval_history, &classified, accuracy, acpl);
+
+    drop(guard);
+
+    Ok(TransientAnalysisResult {
+        accuracy,
+        avg_centipawn_loss: acpl,
+        max_advantage_cp: max_adv,
+        min_advantage_cp: min_adv,
+        blunders: b,
+        pattern_tags: tags.into_iter().map(|(t, _)| t).collect(),
+    })
+}
 
 static ANALYSIS_CANCEL: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(false));
 /// Only one `analyze_pending_games` worker thread at a time.

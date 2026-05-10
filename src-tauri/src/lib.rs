@@ -23,6 +23,7 @@ pub fn run() {
             commands::games::sync_games,
             commands::games::get_games,
             commands::games::refresh_games_background,
+            commands::player_profile::get_player_profile_chart,
             commands::insights::get_insights,
             commands::insights::get_daily_insight,
             commands::insights::regenerate_insights,
@@ -33,6 +34,8 @@ pub fn run() {
             commands::game_analysis::analyze_pending_games,
             commands::game_analysis::cancel_pending_analysis,
             commands::game_analysis::get_similar_games,
+            commands::versus::versus_compare,
+            commands::versus::versus_cancel_compare,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

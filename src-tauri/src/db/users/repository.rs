@@ -92,7 +92,10 @@ pub fn get_active_user(conn: &Connection) -> Result<Option<User>, String> {
             rapid_games,
 
             classical_rating,
-            classical_games
+            classical_games,
+
+            lichess_since_cursor_ms,
+            last_sync_completed_at_ms
         FROM users
         WHERE is_active = 1
         LIMIT 1
@@ -115,9 +118,32 @@ pub fn get_active_user(conn: &Connection) -> Result<Option<User>, String> {
 
                 classical_rating: row.get(9)?,
                 classical_games: row.get(10)?,
+
+                lichess_since_cursor_ms: row.get(11)?,
+                last_sync_completed_at_ms: row.get(12)?,
             })
         },
     )
     .optional()
     .map_err(|e| e.to_string())
+}
+
+pub fn update_user_games_sync_metadata(
+    conn: &Connection,
+    user_id: &str,
+    lichess_since_cursor_ms: Option<i64>,
+    last_sync_completed_at_ms: i64,
+) -> Result<(), String> {
+    conn.execute(
+        "
+        UPDATE users SET
+            lichess_since_cursor_ms = ?1,
+            last_sync_completed_at_ms = ?2
+        WHERE id = ?3
+        ",
+        params![lichess_since_cursor_ms, last_sync_completed_at_ms, user_id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
 }

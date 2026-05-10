@@ -4,4 +4,6 @@ pub mod engine;
 pub mod game_analysis;
 pub mod games;
 pub mod insights;
+pub mod player_profile;
 pub mod users;
+pub mod versus;

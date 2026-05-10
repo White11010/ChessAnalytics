@@ -1,5 +1,5 @@
 <template>
-  <v-card :title="t('home.recentGamesTitle')">
+  <v-card class="h-100" :title="t('home.recentGamesTitle')">
     <v-card-text>
       <v-data-table
         v-if="games.length"

@@ -1,6 +1,13 @@
 <template>
-  <v-card :title="t('home.rateChartTitle')">
-    <v-btn-toggle v-model="speed" class="my-2" base-color="secondary" variant="text" mandatory>
+  <v-card class="h-100" :title="t('home.rateChartTitle')">
+    <v-btn-toggle
+      v-model="speed"
+      class="d-flex flex-wrap mb-2 mt-4"
+      mandatory
+      base-color="secondary"
+      variant="text"
+      density="compact"
+    >
       <v-btn value="bullet">{{ t('myGames.speed.bullet') }}</v-btn>
       <v-btn value="blitz">{{ t('myGames.speed.blitz') }}</v-btn>
       <v-btn value="rapid">{{ t('myGames.speed.rapid') }}</v-btn>
@@ -14,7 +21,10 @@
       :series="series"
     />
 
-    <v-skeleton-loader v-else type="image" />
+    <template v-else>
+      <v-skeleton-loader type="button, button, button" />
+      <v-skeleton-loader type="image" />
+    </template>
   </v-card>
 </template>
 

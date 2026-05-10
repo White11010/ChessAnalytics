@@ -19,6 +19,11 @@ pub struct User {
 
     pub classical_rating: Option<i64>,
     pub classical_games: Option<i64>,
+
+    /// Max `created_at` from last successfully imported Lichess batch; used as `since` for next export.
+    pub lichess_since_cursor_ms: Option<i64>,
+    /// Wall-clock ms when last games sync finished successfully (for UI "updated N min ago").
+    pub last_sync_completed_at_ms: Option<i64>,
 }
 
 impl User {
@@ -46,6 +51,9 @@ impl User {
 
             classical_rating: classical.and_then(|x| x.rating),
             classical_games: classical.and_then(|x| x.games),
+
+            lichess_since_cursor_ms: None,
+            last_sync_completed_at_ms: None,
         }
     }
 }

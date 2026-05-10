@@ -30,4 +30,35 @@ pub fn init_users_table(conn: &Connection) {
         ",
     )
     .unwrap();
+
+    ensure_users_sync_columns(conn);
+}
+
+/// Idempotent migrations for existing DB files (no migration framework in app).
+pub fn ensure_users_sync_columns(conn: &Connection) {
+    let mut cols: Vec<String> = conn
+        .prepare("PRAGMA table_info(users)")
+        .and_then(|mut s| {
+            s.query_map([], |row| row.get::<_, String>(1))
+                .and_then(|rows| rows.collect::<Result<Vec<_>, _>>())
+        })
+        .unwrap_or_default();
+
+    cols.sort();
+    cols.dedup();
+
+    let has = |name: &str| cols.iter().any(|c| c == name);
+
+    if !has("lichess_since_cursor_ms") {
+        let _ = conn.execute(
+            "ALTER TABLE users ADD COLUMN lichess_since_cursor_ms INTEGER",
+            [],
+        );
+    }
+    if !has("last_sync_completed_at_ms") {
+        let _ = conn.execute(
+            "ALTER TABLE users ADD COLUMN last_sync_completed_at_ms INTEGER",
+            [],
+        );
+    }
 }
