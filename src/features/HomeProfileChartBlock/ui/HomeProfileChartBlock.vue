@@ -4,10 +4,9 @@
       <span>{{ t('home.profileChartTitle') }}</span>
       <v-chip
         v-if="payload?.ratingUsed != null && speedChipLabel"
-        size="small"
+        density="compact"
         variant="tonal"
         color="secondary"
-        class="font-mono"
       >
         {{ payload.ratingUsed }} · {{ speedChipLabel }}
       </v-chip>

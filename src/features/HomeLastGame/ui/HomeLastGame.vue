@@ -3,7 +3,7 @@
     <template v-if="lastGame">
       <v-card-text class="home-last-game__body d-flex flex-column">
         <v-row class="home-last-game__row flex-nowrap ga-4" align="stretch">
-          <v-col class="d-flex pa-2 flex-grow-0">
+          <v-col class="d-flex flex-column justify-center pa-2 flex-grow-0">
             <ChessStaticBoard
               :fen="lastGame.last_fen!"
               size="256px"

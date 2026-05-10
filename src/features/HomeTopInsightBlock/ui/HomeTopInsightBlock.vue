@@ -13,20 +13,14 @@
     <template v-else-if="ins">
       <div class="home-top-insight__body">
         <header class="home-top-insight__header">
-          <div class="home-top-insight__chips">
-            <span class="home-top-insight__chip home-top-insight__chip--day">
-              {{ primaryChipLabel }}
-            </span>
-            <span class="home-top-insight__chip home-top-insight__chip--cat">
-              {{ categoryLabel(ins.category) }}
-            </span>
-          </div>
+          <v-chip color="secondary" density="compact">{{ primaryChipLabel }}</v-chip>
+          <v-chip color="secondary" density="compact">{{ categoryLabel(ins.category) }}</v-chip>
           <span class="home-top-insight__confidence">
             {{ t('home.insightConfidence', { pct: Math.round(ins.confidence) }) }}
           </span>
         </header>
 
-        <h2 class="home-top-insight__title">{{ displayTitle }}</h2>
+        <p class="home-top-insight__title">{{ displayTitle }}</p>
 
         <div v-if="metricBlockVisible" class="home-top-insight__stat-bar">
           <span v-if="metricMain" class="home-top-insight__stat-bar-value">{{ metricMain }}</span>
@@ -304,7 +298,6 @@ const metricBlockVisible = computed(() => Boolean(metricMain.value || metricSeco
 .home-top-insight__title {
   margin: 0 0 1rem;
   font-size: 1.125rem;
-  font-weight: 700;
   line-height: 1.35;
   letter-spacing: -0.01em;
   color: rgb(var(--v-theme-on-surface));
@@ -318,24 +311,21 @@ const metricBlockVisible = computed(() => Boolean(metricMain.value || metricSeco
   gap: 0.5rem 0.75rem;
   margin-bottom: 0.875rem;
   padding: 0.65rem 1rem;
-  border-radius: 0.625rem;
-  background: #c8c8c8;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .home-top-insight__stat-bar-value {
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.1;
   color: var(--hti-accent);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .home-top-insight__stat-bar-label {
-  font-size: 0.8125rem;
+  font-size: 1rem;
   font-weight: 500;
   line-height: 1.35;
-  color: rgba(0, 0, 0, 0.48);
+  color: rgb(var(--v-theme-on-surface));
   max-width: 100%;
 }
 
