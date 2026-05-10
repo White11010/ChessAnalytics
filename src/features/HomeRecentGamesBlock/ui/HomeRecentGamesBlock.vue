@@ -132,7 +132,7 @@ const headers = computed(() => [
 ]);
 
 const getRecentGames = computed(() => {
-  return games.value.slice(0, 10);
+  return games.value.slice(0, 6);
 });
 
 function colorPiece(playerColor: Game['player_color']): string {
@@ -162,7 +162,7 @@ function showAnalysisPendingLoader(item: Game): boolean {
 <style lang="scss" scoped>
 .home-recent-games-table {
   :deep(td) {
-    height: 64px;
+    height: 60px;
   }
 
   :deep(td:first-child) {
@@ -174,7 +174,7 @@ function showAnalysisPendingLoader(item: Game): boolean {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 64px;
+  min-height: 60px;
   margin-block: -8px;
   margin-inline-start: 0;
   margin-inline-end: 0;
@@ -192,7 +192,7 @@ function showAnalysisPendingLoader(item: Game): boolean {
 }
 
 .result-marker--draw {
-  box-shadow: inset 3px 0 0 0 rgb(var(--v-theme-outline));
+  box-shadow: inset 3px 0 0 0 rgb(var(--v-theme-primary));
 }
 
 .color-piece {

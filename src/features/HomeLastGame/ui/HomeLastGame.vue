@@ -1,9 +1,9 @@
 <template>
-  <v-card :title="t('home.lastGameTitle')">
+  <v-card class="home-last-game d-flex flex-column flex-grow-1" :title="t('home.lastGameTitle')">
     <template v-if="lastGame">
-      <v-card-text>
-        <v-row>
-          <v-col cols="5" class="d-flex pa-2">
+      <v-card-text class="home-last-game__body d-flex flex-column">
+        <v-row class="home-last-game__row flex-nowrap ga-4" align="stretch">
+          <v-col class="d-flex pa-2 flex-grow-0">
             <ChessStaticBoard
               :fen="lastGame.last_fen!"
               size="256px"
@@ -12,7 +12,7 @@
               :winner="lastGame.winner"
             />
           </v-col>
-          <v-col cols="7" class="d-flex flex-column ga-2">
+          <v-col class="d-flex flex-column ga-2 flex-grow-1">
             <v-list density="compact" class="flex-grow-1">
               <v-list-item>
                 <v-list-item-title>{{
@@ -43,10 +43,9 @@
               </v-list-item>
             </v-list>
 
-            <v-card-actions>
-              <v-spacer />
+            <v-card-actions class="home-last-game__actions">
               <v-btn
-                class="button-width-12"
+                class="button-width-12 home-last-game__btn"
                 color="primary"
                 variant="elevated"
                 prepend-icon="mdi-open-in-new"
@@ -55,7 +54,7 @@
                 {{ t('home.lastGameAnalyze') }}
               </v-btn>
               <v-btn
-                class="button-width-12"
+                class="button-width-12 home-last-game__btn"
                 color="secondary"
                 variant="elevated"
                 prepend-icon="mdi-file-chart"
@@ -63,6 +62,7 @@
               >
                 {{ 'Подробнее' }}
               </v-btn>
+              <v-spacer />
             </v-card-actions>
           </v-col>
         </v-row>
@@ -128,3 +128,39 @@ function getLastMoveFromMoves(moves: string): [Key, Key] {
   return [lastMove!.from, lastMove!.to];
 }
 </script>
+
+<style scoped lang="scss">
+.home-last-game {
+  min-height: min-content;
+  overflow: visible;
+}
+
+.home-last-game :deep(.v-card-title) {
+  flex-shrink: 0;
+}
+
+.home-last-game__body {
+  min-height: min-content;
+  flex: 1 1 auto;
+}
+
+.home-last-game__row {
+  min-width: 0;
+}
+
+.home-last-game__row :deep(.v-col:last-child) {
+  min-width: 0;
+}
+
+.home-last-game__actions {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+
+@media (max-width: 1440px) {
+  .home-last-game__btn {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}
+</style>

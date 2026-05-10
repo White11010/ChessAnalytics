@@ -1,5 +1,5 @@
 <template>
-  <v-layout class="rounded rounded-md border" style="height: 100vh">
+  <v-layout class="rounded rounded-md" style="height: 100vh">
     <v-navigation-drawer permanent :width="240">
       <v-list-item
         class="pa-4"

@@ -1,5 +1,5 @@
 <template>
-  <v-card>
+  <v-card class="home-profile-card h-100">
     <v-card-title class="d-flex flex-wrap justify-space-between align-center ga-2">
       <span>{{ t('home.profileChartTitle') }}</span>
       <v-chip
@@ -27,7 +27,7 @@
       </v-btn-toggle>
     </v-card-text>
 
-    <v-card-text class="pt-2">
+    <v-card-text class="pt-2 home-profile-card__content">
       <div v-if="isPending" class="d-flex flex-column ga-3">
         <v-skeleton-loader type="button, button, button" />
         <v-skeleton-loader type="image" />
@@ -60,37 +60,38 @@
           :text="String(t('home.profileChartLowSample', { n: payload.sampleSize }))"
         />
 
-        <v-row dense>
-          <v-col cols="12" class="d-flex justify-center align-center overflow-visible">
+        <v-row dense class="home-profile-card__layout">
+          <v-col cols="12" lg="8" class="d-flex justify-center align-center overflow-visible">
             <!-- ApexCharts Radar: stroke.width must be a number; arrays break radius (NaN) and collapse labels. -->
             <div class="home-profile-radar-wrap w-100 d-flex justify-center">
               <apexchart
                 v-if="series.length"
                 :key="chartKey"
                 width="100%"
-                height="400"
+                height="460"
                 type="radar"
                 :options="chartOptions"
                 :series="series"
               />
             </div>
           </v-col>
-          <v-col cols="12">
-            <div class="d-flex flex-column ga-4 pt-2">
-              <div v-for="row in metricRows" :key="row.key">
+          <v-col cols="12" lg="4" class="d-flex">
+            <div class="home-profile-metrics ps-lg-2">
+              <div v-for="row in metricRows" :key="row.key" class="home-profile-metric-row">
                 <div class="text-overline text-medium-emphasis">{{ row.label }}</div>
                 <div class="text-h6 font-weight-bold mb-1" :style="{ color: row.accentRgb }">
                   {{ row.displayPlayer }}
                 </div>
                 <v-progress-linear
                   :model-value="row.barValue"
-                  :color="row.vuetifyAccent"
+                  :color="row.barColor"
                   height="4"
                   rounded
                 />
                 <div class="mt-2 text-caption">
-                  <span class="text-medium-emphasis">{{ t('home.profileChartAvgPrefix') }}</span>
-                  <span class="text-medium-emphasis">{{ row.roundedBench }}</span>
+                  <span class="text-medium-emphasis"
+                    >{{ t('home.profileChartAvgPrefix') }}: {{ row.roundedBench }}</span
+                  >
                   <span class="text-medium-emphasis"> · </span>
                   <span :class="row.deltaClass">{{ row.deltaFormatted }}</span>
                 </div>
@@ -106,7 +107,7 @@
 <script setup lang="ts">
 import type { ApexOptions } from 'apexcharts';
 
-import { useQuery } from '@tanstack/vue-query';
+import { keepPreviousData, useQuery } from '@tanstack/vue-query';
 import { invoke } from '@tauri-apps/api/core';
 import { computed, ref, watch } from 'vue';
 import { useTheme } from 'vuetify';
@@ -130,6 +131,7 @@ const { data, isPending, isError } = useQuery({
   queryKey: ['playerProfileChart', speed],
   queryFn: async () =>
     invoke<PlayerProfileChartResponse>('get_player_profile_chart', { speed: speed.value }),
+  placeholderData: keepPreviousData,
 });
 
 watch(
@@ -311,19 +313,21 @@ const metricRows = computed(() => {
 
     let deltaFormatted = String(t('common.emDash'));
     let deltaClass = 'text-medium-emphasis';
+    let barColor: 'success' | 'error' | 'outline' = 'outline';
     if (pvRaw != null && hasPlayer) {
       const diff = Math.round(Number(pvRaw) - bv);
       deltaFormatted = diff > 0 ? `+${diff}` : String(diff);
       if (diff > 0) {
         deltaClass = 'text-success';
+        barColor = 'success';
       } else if (diff < 0) {
         deltaClass = 'text-error';
+        barColor = 'error';
       } else {
         deltaClass = 'text-medium-emphasis';
+        barColor = 'outline';
       }
     }
-
-    const vuetifyAccent = ACCENT_NAMES[i]!;
     const hex = accentHexList.value[i]!;
 
     return {
@@ -332,9 +336,9 @@ const metricRows = computed(() => {
       displayPlayer,
       roundedBench: Math.round(bv),
       barValue: clampPercent(barSource),
+      barColor,
       deltaFormatted,
       deltaClass,
-      vuetifyAccent,
       accentRgb: accentRgb(hex),
     };
   });
@@ -375,7 +379,7 @@ const chartOptions = computed((): ApexOptions => {
     theme: { mode: isDark.value ? 'dark' : 'light' },
     plotOptions: {
       radar: {
-        size: 95,
+        size: 120,
         offsetX: 0,
         offsetY: 2,
         polygons: {
@@ -466,13 +470,45 @@ const chartOptions = computed((): ApexOptions => {
 
 <style scoped lang="scss">
 .home-profile-radar-wrap {
-  min-width: 500px;
-  max-width: 680px;
+  min-width: 560px;
+  max-width: 760px;
   overflow: visible;
 }
 
 .home-profile-radar-wrap :deep(.apexcharts-canvas),
 .home-profile-radar-wrap :deep(svg) {
   overflow: visible;
+}
+
+.home-profile-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-profile-card__content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-profile-card__layout {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.home-profile-metrics {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.home-profile-metric-row {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
 }
 </style>

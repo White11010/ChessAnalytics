@@ -1,10 +1,5 @@
 <template>
-  <v-card
-    class="home-top-insight"
-    :class="`home-top-insight--${severityColor}`"
-    elevation="0"
-    rounded="xl"
-  >
+  <v-card class="home-top-insight" :class="`home-top-insight--${severityColor}`">
     <div class="home-top-insight__accent" aria-hidden="true" />
 
     <template v-if="showSkeleton">
@@ -33,26 +28,22 @@
 
         <h2 class="home-top-insight__title">{{ displayTitle }}</h2>
 
-        <div
-          v-if="metricBlockVisible"
-          class="home-top-insight__stat-bar"
-        >
+        <div v-if="metricBlockVisible" class="home-top-insight__stat-bar">
           <span v-if="metricMain" class="home-top-insight__stat-bar-value">{{ metricMain }}</span>
-          <span v-if="metricSecondary" class="home-top-insight__stat-bar-label">{{ metricSecondary }}</span>
+          <span v-if="metricSecondary" class="home-top-insight__stat-bar-label">{{
+            metricSecondary
+          }}</span>
         </div>
 
         <p class="home-top-insight__summary">{{ displaySummary }}</p>
 
-        <div
-          v-if="recommendationText"
-          class="home-top-insight__tip"
-        >
+        <div v-if="recommendationText" class="home-top-insight__tip">
           <v-icon icon="mdi-lightbulb-on-outline" size="22" class="home-top-insight__tip-icon" />
           <span class="home-top-insight__tip-text">{{ recommendationText }}</span>
         </div>
       </div>
 
-      <footer class="home-top-insight__footer">
+      <!-- <footer class="home-top-insight__footer">
         <v-btn
           variant="outlined"
           class="home-top-insight__btn"
@@ -65,7 +56,7 @@
         <v-btn variant="outlined" class="home-top-insight__btn" @click="goAllInsights">
           {{ t('home.allInsights') }}
         </v-btn>
-      </footer>
+      </footer> -->
     </template>
 
     <div v-else-if="showEmpty" class="home-top-insight__body home-top-insight__empty">
@@ -149,9 +140,7 @@ function severityToColor(severity: Insight['severity']): 'success' | 'warning' |
   }
 }
 
-const severityColor = computed(() =>
-  ins.value ? severityToColor(ins.value.severity) : 'info',
-);
+const severityColor = computed(() => (ins.value ? severityToColor(ins.value.severity) : 'info'));
 
 const showingDaily = computed(() => {
   const h = heroInsight.value;
@@ -255,7 +244,10 @@ function goAllInsights(): void {
 .home-top-insight {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  min-height: max-content;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   background: rgb(var(--v-theme-surface));
 
   /* Accent channel for this card (matches Vuetify semantic colors) */
@@ -284,6 +276,7 @@ function goAllInsights(): void {
 
 .home-top-insight__body {
   padding: 1.125rem 1.25rem 1rem;
+  flex: 1 1 auto;
 }
 
 .home-top-insight__header {
