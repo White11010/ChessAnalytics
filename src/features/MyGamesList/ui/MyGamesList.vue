@@ -11,7 +11,7 @@
       :items="games"
       class="my-games-list"
       :cell-props="cellDataAttrs"
-      :custom-key-sort="customKeySort"
+      :custom-key-sort="MY_GAMES_TABLE_CUSTOM_KEY_SORT"
       items-per-page="25"
       must-sort
     >
@@ -173,33 +173,20 @@
     </v-data-table>
   </div>
 
-  <Teleport to="body">
-    <div
-      v-show="boardPreview"
-      class="my-games-list__board-preview"
-      :style="boardPreviewStyle"
-      @mouseenter="hideBoardPreview"
-    >
-      <template v-if="boardPreview && canShowFinalBoard(boardPreview.game)">
-        <ChessStaticBoard
-          :fen="boardPreview.game.last_fen!"
-          :last-move="finalLastMove(boardPreview.game)"
-          :orientation="boardPreview.game.player_color"
-          :winner="boardPreview.game.winner"
-          size="200px"
-        />
-      </template>
-    </div>
-  </Teleport>
+  <MyGamesListBoardPreview
+    :preview="boardPreview"
+    :preview-style="boardPreviewStyle"
+    @hide="hideBoardPreview"
+  />
 </template>
 
 <script setup lang="ts">
-// Feature slice: encapsulates one user flow or form; parent pages/widgets compose it and pass props/events.
-
+// My Games `v-data-table`: column cell slots, row-hover board preview, and entity-backed sort/header config.
 import { useAnalysisSettingsStore } from '@/entities/analysis-settings';
 import {
   type Game,
   type MyGamesTableSortItem,
+  MY_GAMES_TABLE_CUSTOM_KEY_SORT,
   accuracyPercentRounded,
   accuracyToneFromRounded,
   getExternalGameUrl,
@@ -208,13 +195,15 @@ import {
   resultLetter,
   shortOpeningDisplay,
 } from '@/entities/game';
-import { ChessStaticBoard } from '@/shared/ui';
 import { formatMyGamesTableDate, formatPatternTagLabel } from '@/shared/lib';
 import { useI18n } from '@/shared/lib/i18n';
-import type { Key } from 'chessground/types';
 import { storeToRefs } from 'pinia';
-import { computed, shallowRef } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vuetify/lib/composables/router.mjs';
+
+import { getMyGamesTableHeaders } from '../lib/myGamesTableColumns';
+import { useMyGamesBoardRowPreview } from '../lib/useMyGamesBoardRowPreview';
+import MyGamesListBoardPreview from './MyGamesListBoardPreview.vue';
 
 const props = defineProps<{
   games: Game[];
@@ -229,11 +218,13 @@ const router = useRouter();
 
 const { backgroundAnalysisEnabled } = storeToRefs(useAnalysisSettingsStore());
 
-const boardPreview = shallowRef<{ game: Game; rect: DOMRect } | null>(null);
-
-function hideBoardPreview() {
-  boardPreview.value = null;
-}
+const {
+  boardPreview,
+  boardPreviewStyle,
+  onGamesTableMouseOver,
+  onGamesTableMouseLeave,
+  hideBoardPreview,
+} = useMyGamesBoardRowPreview(() => props.games);
 
 function cellDataAttrs(data: { item: Game }) {
   return {
@@ -241,65 +232,7 @@ function cellDataAttrs(data: { item: Game }) {
   };
 }
 
-function canShowFinalBoard(game: Game): boolean {
-  return Boolean(game.last_fen && game.moves);
-}
-
-function finalLastMove(game: Game): [Key, Key] {
-  const tokens = (game.moves || '').trim().split(/\s+/).filter(Boolean);
-  const lastToken = tokens[tokens.length - 1] || 'e2e4';
-  return [lastToken.slice(0, 2) as Key, lastToken.slice(2, 4) as Key];
-}
-
-function onGamesTableMouseOver(e: MouseEvent) {
-  const host = (e.target as HTMLElement | null)?.closest?.('[data-game-id]') as HTMLElement | null;
-  if (!host?.dataset.gameId) {
-    hideBoardPreview();
-    return;
-  }
-  const game = props.games.find((g) => g.id === host.dataset.gameId);
-  if (!game || !canShowFinalBoard(game)) {
-    hideBoardPreview();
-    return;
-  }
-  const tr = host.closest('tr');
-  const rect = (tr ?? host).getBoundingClientRect();
-  boardPreview.value = { game, rect };
-}
-
-function onGamesTableMouseLeave() {
-  hideBoardPreview();
-}
-
-const boardPreviewStyle = computed(() => {
-  const b = boardPreview.value;
-  if (!b) {
-    return {};
-  }
-  const pad = 8;
-  const boardPx = 200;
-  const panelW = boardPx + pad * 2;
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  // Prefer floating board to the left of the row; fall back to the right if it would clip off-screen.
-  let left = b.rect.left - pad - panelW;
-  if (left < pad) {
-    left = b.rect.right + pad;
-  }
-  if (left + panelW > vw - pad) {
-    left = Math.max(pad, vw - pad - panelW);
-  }
-  const top = Math.max(pad, Math.min(b.rect.top, vh - boardPx - pad));
-  return {
-    position: 'fixed' as const,
-    left: `${left}px`,
-    top: `${top}px`,
-    zIndex: 3000,
-    width: `calc(${boardPx}px + ${pad * 2}px)`,
-    height: `calc(${boardPx}px + ${pad * 2}px)`,
-    overflow: 'hidden',
-  };
-});
+const headers = computed(() => getMyGamesTableHeaders(t));
 
 function showAnalysisPendingLoader(item: Game): boolean {
   return accuracyPercentRounded(item.analysis_accuracy) == null;
@@ -308,102 +241,6 @@ function showAnalysisPendingLoader(item: Game): boolean {
 function formatAcpl(v: number): string {
   return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
-
-function nullableNumSort(a: unknown, b: unknown): number | null {
-  const an = a == null || a === '' ? null : Number(a);
-  const bn = b == null || b === '' ? null : Number(b);
-  if (an === null && bn === null) {
-    return 0;
-  }
-  if (an === null) {
-    return 1;
-  }
-  if (bn === null) {
-    return -1;
-  }
-  if (Number.isNaN(an) || Number.isNaN(bn)) {
-    return null;
-  }
-  if (an === bn) {
-    return 0;
-  }
-  return an < bn ? -1 : 1;
-}
-
-function strEmptyLastSort(a: unknown, b: unknown): number | null {
-  const sa = a == null ? '' : String(a).toLowerCase();
-  const sb = b == null ? '' : String(b).toLowerCase();
-  const ae = sa === '';
-  const be = sb === '';
-  if (ae && be) {
-    return 0;
-  }
-  if (ae) {
-    return 1;
-  }
-  if (be) {
-    return -1;
-  }
-  if (sa < sb) {
-    return -1;
-  }
-  if (sa > sb) {
-    return 1;
-  }
-  return 0;
-}
-
-function speedRank(s: unknown): number {
-  const g = String(s ?? '').toLowerCase();
-  if (g === 'ultrabullet') {
-    return 0;
-  }
-  if (g === 'bullet') {
-    return 1;
-  }
-  if (g === 'blitz') {
-    return 2;
-  }
-  if (g === 'rapid') {
-    return 3;
-  }
-  if (g === 'classical') {
-    return 4;
-  }
-  return 99;
-}
-
-function speedSort(a: unknown, b: unknown): number | null {
-  const ra = speedRank(a);
-  const rb = speedRank(b);
-  if (ra !== rb) {
-    return ra - rb;
-  }
-  return null;
-}
-
-const customKeySort: Record<string, (a: unknown, b: unknown) => number | null> = {
-  analysis_accuracy: nullableNumSort,
-  analysis_acpl: nullableNumSort,
-  player_rating: nullableNumSort,
-  created_at: nullableNumSort,
-  opponent_name: strEmptyLastSort,
-  opening_name: strEmptyLastSort,
-  speed: speedSort,
-};
-
-const headers = computed(() => [
-  { key: 'result_marker', title: '', width: '40px', sortable: false },
-  { key: 'opponent_name', title: t('myGames.table.opponent'), sortable: true },
-  { key: 'opening_name', title: t('myGames.table.opening'), sortable: true },
-  { key: 'speed', title: t('myGames.table.time'), width: '100px', sortable: true },
-  { key: 'player_rating', title: t('myGames.table.rating'), width: '88px', sortable: true },
-  { key: 'analysis_accuracy', title: t('myGames.table.accuracy'), width: '88px', sortable: true },
-  { key: 'analysis_acpl', title: t('myGames.table.acpl'), width: '72px', sortable: true },
-  { key: 'pattern_tags', title: t('myGames.table.patterns'), sortable: false },
-  { key: 'created_at', title: t('myGames.table.date'), width: '144px', sortable: true },
-  { key: 'actions', title: '', width: '96px', sortable: false },
-]);
 
 function localizedSpeedChipLabel(speed: string): string {
   const s = speed.toLowerCase();
@@ -502,15 +339,5 @@ function onExternalClick(item: Game) {
 
 .my-games-list-hover-root {
   width: 100%;
-}
-
-.my-games-list__board-preview {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  background: rgb(var(--v-theme-surface));
-  box-shadow:
-    0 0.25rem 0.75rem rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(var(--v-border-color), var(--v-border-opacity));
-  pointer-events: auto;
 }
 </style>

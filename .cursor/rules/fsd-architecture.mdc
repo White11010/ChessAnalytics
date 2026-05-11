@@ -1,0 +1,86 @@
+---
+description: Feature-Sliced Design (FSD) — layers, public API, and forbidden imports under src/
+alwaysApply: true
+---
+
+# Feature-Sliced Design (mandatory)
+
+This project follows **Feature-Sliced Design**. All new or changed code must comply. Violations are design errors.
+
+## Layers (top to bottom — dependency order only)
+
+A **higher** layer may import only **lower** layers (lower in the list = more foundational code).
+
+1. **app** — providers, bootstrap, global application shell.
+2. **pages** — routed screens: compose **widgets** and **features**; keep logic thin.
+3. **widgets** — large cohesive UI blocks; compose **features** and **entities**.
+4. **features** — complete user-facing scenarios; **entities** + **shared**.
+5. **entities** — domain model (types, stores, entity-specific data access); **shared** only.
+6. **shared** — reusable technical code with no product meaning (UI kit, utilities, i18n helpers).
+
+The **processes** layer is not used in this repo; do not introduce it without an explicit team decision.
+
+## Slices and segments
+
+- Each **slice** is a folder inside a layer (e.g. `entities/game`, `features/MyGamesList`).
+- Inside a slice, use segments such as **`ui`**, **`model`**, **`lib`**, **`api`**, **`config`**, etc., as appropriate.
+- **Public API of a slice** — re-export from `index.ts` at the slice root. External code imports only through it (e.g. `@/entities/game`, `@/features/MyGamesList`).
+
+## Patterns you must not break
+
+### 1. Reverse layer imports
+
+**Rule:** a file in layer **L** must not import code from any layer **above** L (see layer order above).
+
+Forbidden upward dependencies include:
+
+- `shared` → `entities`, `features`, `widgets`, `pages`, `app` (only npm packages and other `shared` modules)
+- `entities` → `features`, `widgets`, `pages`, `app`
+- `features` → `widgets`, `pages`, `app`
+- `widgets` → `pages`, `app`
+- `pages` → `app` (pages do not wire bootstrap/providers from `app`; that stays in `app`)
+
+The arrow **→** means “imports / depends on”.
+
+### 2. Bypassing a slice’s public API
+
+Do not deep-import another slice’s internals:
+
+- ❌ `@/entities/game/model/game.store` from outside the `game` slice.
+- ✅ `@/entities/game` via the slice `index.ts`.
+
+**Exception:** within **one slice**, relative imports across `ui` / `model` / `lib` are fine.
+
+### 3. Cross-imports between slices on the **same** layer (avoid)
+
+- **entities/A** must not import **entities/B** directly. Move shared bits to **shared**, or lift orchestration to a higher layer (**feature** / **widget**) that composes both entities.
+- **features/A** must not import **features/B**. Deduplicate into an **entity** or **shared**; compose two features in a **widget** or **page**.
+
+If a cross-import is unavoidable, keep it minimal and align with existing precedent; treat the default as **forbidden**.
+
+### 4. Business or product logic in **shared**
+
+- Do not keep domain types for player/game/Lichess or domain Pinia stores in **shared**.
+- **shared** is only reusable abstractions without product semantics.
+
+### 5. Bloated pages and widgets
+
+- **pages:** layout, routing, thin glue only — push business logic to **features** / **entities**.
+- **widgets:** composition — do not duplicate a whole scenario that already exists as a **feature**.
+
+### 6. Ad-hoc top-level folders under `src/`
+
+Do not add new root folders next to `app`, `pages`, `widgets`, `features`, `entities`, `shared` (e.g. top-level `components`, `services`). New code lives only in these layers.
+
+## Where to put code (cheat sheet)
+
+| Goal | Layer |
+|------|--------|
+| User action / “do X” scenario | **features** |
+| Domain entity model / card | **entities** |
+| Large dashboard block from several features | **widgets** |
+| Routed screen | **pages** |
+| Utility, UI kit, generic helper | **shared** |
+| Providers, bootstrap | **app** |
+
+When in doubt, **move coupling upward** (entity → feature → widget) instead of pulling imports downward.

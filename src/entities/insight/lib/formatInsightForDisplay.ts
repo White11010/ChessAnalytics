@@ -1,3 +1,4 @@
+// Localized insight titles, summaries, recommendations, and metric labels from payloads and i18n keys.
 import type { Insight } from '../model/insight.types';
 
 import { mergeInsightDisplayParams, parseInsightPayload } from './insightPayload';
@@ -189,4 +190,31 @@ export function getInsightMetricLabel(insight: Insight, t: TFn, te: TeFn): strin
     return t(labelKey);
   }
   return null;
+}
+
+
+// Resolves stored title, summary, and recommendation with i18n fallbacks for compact cards.
+
+export function resolveInsightDisplayTitle(insight: Insight, t: TFn, te: TeFn): string {
+  const raw = insight.title?.trim();
+  if (raw) {
+    return raw;
+  }
+  return getInsightTitle(insight, t, te);
+}
+
+export function resolveInsightDisplaySummary(insight: Insight, t: TFn, te: TeFn): string {
+  const raw = insight.summary?.trim();
+  if (raw) {
+    return raw;
+  }
+  return getInsightSummary(insight, t, te);
+}
+
+export function resolveInsightDisplayRecommendation(insight: Insight, t: TFn, te: TeFn): string | null {
+  const raw = insight.recommendation?.trim();
+  if (raw) {
+    return raw;
+  }
+  return getInsightRecommendation(insight, t, te);
 }

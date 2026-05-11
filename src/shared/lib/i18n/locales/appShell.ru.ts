@@ -51,7 +51,7 @@ export const appShellRu = {
     lastGameVs: 'против {name}',
     lastGameRating: 'Рейтинг соперника: {rating}',
     lastGameAnalyze: 'Анализ на Lichess',
-    lastGameReview: 'Обзор',
+    lastGameReview: 'Подробнее',
     profileChartTitle: 'Профиль игрока',
     profileChartLegendYours: 'Твои показатели',
     profileChartLegendAvg: 'Средние {label}',

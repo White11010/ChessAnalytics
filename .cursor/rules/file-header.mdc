@@ -1,0 +1,12 @@
+---
+description: Every source file starts with a one-line English file-level comment
+globs: '**/*.{ts,tsx,vue}'
+alwaysApply: false
+---
+
+# File header
+
+- The **first line** of every new or substantially edited source file MUST be a single-line `//` (TS/JS) or appropriate comment style for the file type summarizing purpose/responsibility.
+- Style: concise, like `// Fixed-position final-FEN board preview on row hover via data-game-id, without prop-driven churn on the table body.`
+- When creating a file, add this comment before imports and before the module body.
+- Do not remove existing headers when editing unrelated code.

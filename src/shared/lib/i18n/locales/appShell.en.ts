@@ -1,8 +1,8 @@
 /** Layout, home, settings, insights, analysis shell — merged into main locale files. */
 export const appShellEn = {
   layout: {
-    brandTitle: 'ChessLens',
-    brandSubtitle: 'Analytics platform',
+    brandTitle: 'Blindspot',
+    brandSubtitle: 'Chess Patterns',
     navHome: 'Home',
     navInsights: 'Insights',
     navMyGames: 'My games',
@@ -168,8 +168,7 @@ export const appShellEn = {
     appearanceCard: 'Appearance',
     analysisCard: 'Analysis',
     backgroundAnalysis: 'Background analysis',
-    backgroundAnalysisHint:
-      'When enabled, the app can analyze games in the background after sync.',
+    backgroundAnalysisHint: 'When enabled, the app can analyze games in the background after sync.',
     themeSection: 'Theme',
     themeLight: 'Light',
     themeDark: 'Dark',
@@ -343,12 +342,14 @@ export const appShellEn = {
       },
       psychology_tilt: {
         title: 'Tilt detector',
-        summary: 'After two losses in a row, win rate on the 3rd and 4th next games: {pct}% ({tilt_wins}/{tilt_n}).',
+        summary:
+          'After two losses in a row, win rate on the 3rd and 4th next games: {pct}% ({tilt_wins}/{tilt_n}).',
         recommendation: 'Take a short break or warm up after losing streaks.',
       },
       psychology_comeback: {
         title: 'Bounce-back',
-        summary: 'Win rate in the game right after a loss: {pct}% ({wins_after_loss}/{trials_after_loss}).',
+        summary:
+          'Win rate in the game right after a loss: {pct}% ({wins_after_loss}/{trials_after_loss}).',
         recommendation: 'Compare with your baseline to see how you recover.',
       },
       psychology_rest_effect: {

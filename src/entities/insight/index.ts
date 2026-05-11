@@ -1,9 +1,31 @@
+// Public API for insight domain: display helpers, filters, stores, and My Games navigation.
 export {
   getInsightMetricLabel,
   getInsightRecommendation,
   getInsightSummary,
   getInsightTitle,
+  resolveInsightDisplayRecommendation,
+  resolveInsightDisplaySummary,
+  resolveInsightDisplayTitle,
 } from './lib/formatInsightForDisplay';
+export {
+  getInsightCategoryLabel,
+  insightCategoryStripeColor,
+} from './lib/insightCategoryPresentation';
+export {
+  getInsightDeltaCaption,
+  insightDeltaUsesPercentPoints,
+} from './lib/insightDeltaPresentation';
+export {
+  formatInsightMetricPrimaryValue,
+  insightMetricBlockVisible,
+  insightMetricSecondaryLabel,
+} from './lib/insightMetricLine';
+export { findRatingGrowth30dInsight } from './lib/insightRatingGrowthKpi';
+export {
+  insightSeverityToSemanticColor,
+  type InsightSeveritySemanticColor,
+} from './lib/insightSeverity';
 export {
   mergeInsightDisplayParams,
   openingNameFromSubjectKey,

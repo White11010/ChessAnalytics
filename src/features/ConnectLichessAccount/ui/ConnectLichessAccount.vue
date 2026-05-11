@@ -25,9 +25,9 @@
 // Feature slice: encapsulates one user flow or form; parent pages/widgets compose it and pass props/events.
 
 import { invoke } from '@tauri-apps/api/core';
+import { useQueryClient } from '@tanstack/vue-query';
 import { ref } from 'vue';
 
-import { queryClient } from '@/app/providers/query/queryProvider';
 import { useAppStore } from '@/entities/app';
 import { useGamesSyncStore } from '@/entities/games-sync';
 import type { User } from '@/entities/user';
@@ -35,6 +35,7 @@ import { useUserStore } from '@/entities/user';
 import { useI18n } from '@/shared/lib/i18n';
 
 const { t } = useI18n();
+const queryClient = useQueryClient();
 
 const isLoading = ref(false);
 const userStore = useUserStore();

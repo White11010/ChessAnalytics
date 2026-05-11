@@ -60,7 +60,7 @@
                 prepend-icon="mdi-file-chart"
                 @click="onReviewButtonClick(lastGame)"
               >
-                {{ 'Подробнее' }}
+                {{ t('home.lastGameReview') }}
               </v-btn>
               <v-spacer />
             </v-card-actions>

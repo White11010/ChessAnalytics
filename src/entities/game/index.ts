@@ -1,4 +1,6 @@
+// Game entity public surface: sync/query helpers, My Games filters, and v-data-table sort maps for the games list.
 export { computeCurrentResultStreak, type ResultStreak } from './lib/computeCurrentResultStreak';
+export { averageAnalysisAccuracyPercentRounded } from './lib/averageAnalysisAccuracy';
 export { useSyncGamesQuery } from './lib/gamesQuery';
 export type { AccuracyTone } from './lib/myGamesDisplay';
 export {
@@ -11,6 +13,7 @@ export {
   shortOpeningDisplay,
   speedChipLabel,
 } from './lib/myGamesDisplay';
+export { MY_GAMES_TABLE_CUSTOM_KEY_SORT } from './lib/myGamesTableSort';
 export {
   filterMyGames,
   normalizePatternTagId,

@@ -65,148 +65,24 @@
 <script setup lang="ts">
 // Feature slice: encapsulates one user flow or form; parent pages/widgets compose it and pass props/events.
 
-import { computed, ref, watch } from 'vue';
-import { storeToRefs } from 'pinia';
-
-import {
-  getInsightRecommendation,
-  getInsightSummary,
-  getInsightTitle,
-  useInsightsLoadQuery,
-  useInsightsStore,
-} from '@/entities/insight';
-import type { Insight, InsightCategory } from '@/entities/insight/model/insight.types';
-import { useSyncGamesQuery } from '@/entities/game';
+import { useHomeTopInsightBlock } from '../lib/useHomeTopInsightBlock';
 import { useI18n } from '@/shared/lib/i18n';
 
-const { t, te } = useI18n();
-
-const gamesQuery = useSyncGamesQuery();
-const insightsQuery = useInsightsLoadQuery(gamesQuery.isSuccess);
-
-const insightsStore = useInsightsStore();
-const { heroInsight } = storeToRefs(insightsStore);
-
-const displayInsight = ref<Insight | null>(null);
-
-watch(
-  heroInsight,
-  (hero) => {
-    displayInsight.value = hero ?? null;
-  },
-  { immediate: true },
-);
-
-const ins = computed(() => displayInsight.value);
-
-const queryEnabled = computed(() => gamesQuery.isSuccess.value);
-
-const showSkeleton = computed(
-  () =>
-    queryEnabled.value &&
-    (insightsQuery.isPending.value || insightsQuery.isFetching.value) &&
-    ins.value === null,
-);
-
-const showEmpty = computed(
-  () =>
-    queryEnabled.value &&
-    !insightsQuery.isPending.value &&
-    !insightsQuery.isFetching.value &&
-    ins.value === null,
-);
-
-function severityToColor(severity: Insight['severity']): 'success' | 'warning' | 'error' | 'info' {
-  switch (severity) {
-    case 'good':
-      return 'success';
-    case 'warning':
-      return 'warning';
-    case 'critical':
-      return 'error';
-    case 'info':
-    default:
-      return 'info';
-  }
-}
-
-const severityColor = computed(() => (ins.value ? severityToColor(ins.value.severity) : 'info'));
-
-const showingDaily = computed(() => {
-  const h = heroInsight.value;
-  const d = displayInsight.value;
-  return Boolean(h && d && h.id === d.id);
-});
-
-const primaryChipLabel = computed(() =>
-  showingDaily.value ? t('home.insightOfDayChip') : t('home.insightPreviewChip'),
-);
-
-function categoryLabel(c: InsightCategory): string {
-  switch (c) {
-    case 'openings':
-      return t('insightsPage.filterOpenings');
-    case 'time':
-      return t('insightsPage.filterTime');
-    case 'tactics':
-      return t('insightsPage.filterTactics');
-    case 'psychology':
-      return t('insightsPage.filterPsychology');
-    default:
-      return c;
-  }
-}
-
-function displayTitleFor(i: Insight): string {
-  const raw = i.title?.trim();
-  if (raw) {
-    return raw;
-  }
-  return getInsightTitle(i, t, te);
-}
-
-function displaySummaryFor(i: Insight): string {
-  const raw = i.summary?.trim();
-  if (raw) {
-    return raw;
-  }
-  return getInsightSummary(i, t, te);
-}
-
-const displayTitle = computed(() => (ins.value ? displayTitleFor(ins.value) : ''));
-
-const displaySummary = computed(() => (ins.value ? displaySummaryFor(ins.value) : ''));
-
-const recommendationText = computed(() => {
-  const i = ins.value;
-  if (!i) {
-    return null;
-  }
-  const raw = i.recommendation?.trim();
-  if (raw) {
-    return raw;
-  }
-  return getInsightRecommendation(i, t, te);
-});
-
-const metricMain = computed(() => {
-  const i = ins.value;
-  if (!i) {
-    return '';
-  }
-  if (i.metric_value?.trim()) {
-    return i.metric_value.trim();
-  }
-  if (i.metric_number != null && Number.isFinite(i.metric_number)) {
-    const n = i.metric_number;
-    return Number.isInteger(n) ? String(n) : n.toFixed(1);
-  }
-  return '';
-});
-
-const metricSecondary = computed(() => ins.value?.metric_label?.trim() ?? '');
-
-const metricBlockVisible = computed(() => Boolean(metricMain.value || metricSecondary.value));
+const { t } = useI18n();
+const {
+  ins,
+  showSkeleton,
+  showEmpty,
+  severityColor,
+  primaryChipLabel,
+  categoryLabel,
+  displayTitle,
+  displaySummary,
+  recommendationText,
+  metricMain,
+  metricSecondary,
+  metricBlockVisible,
+} = useHomeTopInsightBlock();
 </script>
 
 <style lang="scss" scoped>
@@ -244,8 +120,10 @@ const metricBlockVisible = computed(() => Boolean(metricMain.value || metricSeco
 }
 
 .home-top-insight__body {
-  padding: 1.125rem 1.25rem 0 1rem;
+  padding: 1.125rem 0 0 0;
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .home-top-insight__header {
@@ -348,6 +226,7 @@ const metricBlockVisible = computed(() => Boolean(metricMain.value || metricSeco
   border: 1px solid color-mix(in srgb, var(--hti-accent) 55%, transparent);
   background: color-mix(in srgb, var(--hti-accent) 14%, rgb(12, 12, 14));
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  margin-top: auto;
 }
 
 .home-top-insight__tip-icon {
