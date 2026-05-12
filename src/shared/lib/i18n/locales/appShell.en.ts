@@ -130,6 +130,12 @@ export const appShellEn = {
     conclusionBlundersHigh: 'More blunders per game ({you} vs {opp}).',
     conclusionEndHigh: 'Endgame tag profile looks cleaner (pentagon endgame {you} vs {opp}).',
     conclusionOpenHigh: 'Opening resilience better (pentagon openings {you} vs {opp}).',
+    emptyTitle: 'Enter a Lichess username',
+    emptyBenefitsTitle: 'You will be able to:',
+    emptyBenefitCompare: "Compare your pentagon with the opponent's",
+    emptyBenefitMetrics: 'See detailed metrics',
+    emptyBenefitGameplan: 'Get a recommended plan against this player',
+    emptyQuickStart: 'Quick start:',
   },
   insightsPage: {
     title: 'Explore your personal insights',

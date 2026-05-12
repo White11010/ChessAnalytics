@@ -1,0 +1,54 @@
+---
+description: Use Vuetify as the primary UI toolkit and align with the app's visual style
+alwaysApply: true
+---
+
+# Vuetify-first UI
+
+This project uses **Vuetify 3** as the primary UI toolkit. New or changed UI must be built on Vuetify components, directives, styles, theme tokens and utility classes whenever possible.
+
+## Rules
+
+1. **Prefer Vuetify components over hand-rolled markup.** Buttons, inputs, cards, dialogs, tables, menus, tabs, chips, lists, alerts, progress, icons, etc. must use `v-*` components (`v-btn`, `v-card`, `v-text-field`, `v-data-table`, `v-dialog`, `v-icon`, …). Do not reimplement what Vuetify already provides.
+2. **Use Vuetify styling primitives** instead of custom CSS where possible:
+   - Spacing/typography/elevation/display via Vuetify utility classes (`pa-*`, `ma-*`, `text-*`, `elevation-*`, `d-flex`, `align-*`, `justify-*`, …).
+   - Colors via theme tokens (`color="primary" | "secondary" | "surface" | …` and CSS vars `rgb(var(--v-theme-…))`), not hard-coded hex values.
+   - Icons via `v-icon` with the `mdi` set (already configured in `src/app/providers/vuetify/vuetify.ts`).
+3. **Respect the existing visual style.** Match elevation, density, rounding, spacing and color usage already present in neighboring widgets/features. Do not introduce ad‑hoc design choices that diverge from the rest of the app.
+4. **Custom CSS is a last resort.** Allowed only when Vuetify has no equivalent or when a small tweak on top of a Vuetify component is required. Keep it scoped (`<style scoped>`) and minimal.
+5. **No parallel UI kits.** Do not add other component libraries (Element Plus, PrimeVue, Naive UI, Bootstrap, Tailwind, etc.) or copy bare HTML/CSS widgets from random sources.
+
+## Working with UI references
+
+When the user provides a UI reference (screenshot, mockup, snippet in another framework/library, plain HTML/CSS, design from a different design system), and unless they explicitly say otherwise:
+
+- Treat the reference as a **layout/UX intent**, not as code to copy verbatim.
+- **Replace reference UI primitives with their Vuetify equivalents** (e.g. a generic `<button>` → `v-btn`, a custom card div → `v-card`, an HTML table → `v-data-table`, an icon font glyph → `v-icon` with an `mdi-*` name).
+- Map reference colors/spacing/typography onto the **app's Vuetify theme** (see `src/app/providers/vuetify/vuetify.ts`) rather than hard-coding the reference's values.
+- Preserve the structure and behavior described by the reference, but the resulting code must look and feel like the rest of this Vuetify-based app.
+
+## Examples
+
+```vue
+<!-- BAD: hand-rolled button with hard-coded colors -->
+<button class="my-btn" style="background:#F59E0B;color:#fff;padding:8px 16px;border-radius:6px">
+  Save
+</button>
+
+<!-- GOOD: Vuetify button using theme color and utility classes -->
+<v-btn color="secondary" variant="flat" class="px-4">Save</v-btn>
+```
+
+```vue
+<!-- BAD: custom card markup copied from a reference -->
+<div class="card">
+  <div class="card-header">Title</div>
+  <div class="card-body">…</div>
+</div>
+
+<!-- GOOD: Vuetify card matching app style -->
+<v-card variant="tonal" rounded="lg" class="pa-4">
+  <v-card-title>Title</v-card-title>
+  <v-card-text>…</v-card-text>
+</v-card>
+```

@@ -4,6 +4,8 @@
       <div class="mx-auto versus-page__max">
         <VersusCompareForm />
 
+        <VersusEmptyStateHint v-if="!versusStore.result && !versusStore.loading" />
+
         <template v-if="versusStore.result && activeSlice">
           <VersusSpeedFilter />
           <VersusHeadToHeadCards :slice="activeSlice" :speed-label="speedLabel" />
@@ -32,6 +34,7 @@ import { useVersusStore } from '@/entities/versus';
 import { useI18n } from '@/shared/lib/i18n';
 import { VersusConclusionsBlock } from '@/widgets/VersusConclusionsBlock';
 import { VersusDiagnosticsAlerts } from '@/widgets/VersusDiagnosticsAlerts';
+import { VersusEmptyStateHint } from '@/widgets/VersusEmptyStateHint';
 import { VersusGamePlanSection } from '@/widgets/VersusGamePlanSection';
 import { VersusHeadToHeadCards } from '@/widgets/VersusHeadToHeadCards';
 import { VersusMetricsTable } from '@/widgets/VersusMetricsTable';

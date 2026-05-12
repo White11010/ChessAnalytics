@@ -131,6 +131,12 @@ export const appShellRu = {
     conclusionBlundersHigh: 'Больше зевков на партию ({you} против {opp}).',
     conclusionEndHigh: 'По тегам меньше проблем в эндшпиле (пентагон: {you} против {opp}).',
     conclusionOpenHigh: 'По дебюту устойчивее (пентагон: {you} против {opp}).',
+    emptyTitle: 'Введи ник игрока на Lichess',
+    emptyBenefitsTitle: 'Ты сможешь:',
+    emptyBenefitCompare: 'Сравнить свой пятиугольник с пятиугольником соперника',
+    emptyBenefitMetrics: 'Увидеть детальные метрики',
+    emptyBenefitGameplan: 'Получить рекомендации, что играть против этого игрока',
+    emptyQuickStart: 'Быстрый старт:',
   },
   insightsPage: {
     title: 'Персональные инсайты',
