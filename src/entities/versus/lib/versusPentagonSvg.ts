@@ -1,8 +1,17 @@
-/** Inline SVG radar for Versus pentagon comparison (same layout as legacy VersusPage). */
-export function buildVersusPentagonSvg(yVals: number[], oVals: number[]): string {
-  const cx = 90;
-  const cy = 90;
-  const R = 72;
+/** Inline SVG radar for Versus pentagon comparison (same vertex order as Home profile chart). */
+function escapeSvgText(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+export function buildVersusPentagonSvg(
+  yVals: number[],
+  oVals: number[],
+  axisLabels?: readonly string[],
+): string {
+  const vb = 400;
+  const cx = 200;
+  const cy = 200;
+  const R = 108;
   const n = 5;
   const gridStroke = 'rgba(var(--v-theme-on-surface), 0.2)';
   const ringInner = 'rgba(var(--v-theme-on-surface), 0.12)';
@@ -38,12 +47,24 @@ export function buildVersusPentagonSvg(yVals: number[], oVals: number[]): string
   const op = pts(oVals);
   inner += `<path d="${path(op)}" fill="rgba(var(--v-theme-warning), 0.12)" stroke="rgb(var(--v-theme-warning))" stroke-width="1.5" stroke-dasharray="4,3"/>`;
   const yp = pts(yVals);
-  inner += `<path d="${path(yp)}" fill="rgba(var(--v-theme-primary), 0.15)" stroke="rgb(var(--v-theme-primary))" stroke-width="2"/>`;
+  inner += `<path d="${path(yp)}" fill="rgba(var(--v-theme-info), 0.15)" stroke="rgb(var(--v-theme-info))" stroke-width="2"/>`;
   for (const pt of yp) {
-    inner += `<circle cx="${pt[0]}" cy="${pt[1]}" r="3" fill="rgb(var(--v-theme-primary))" stroke="rgb(var(--v-theme-surface))" stroke-width="1.5"/>`;
+    inner += `<circle cx="${pt[0]}" cy="${pt[1]}" r="3" fill="rgb(var(--v-theme-info))" stroke="rgb(var(--v-theme-surface))" stroke-width="1.5"/>`;
   }
   for (const pt of op) {
     inner += `<circle cx="${pt[0]}" cy="${pt[1]}" r="3" fill="rgb(var(--v-theme-warning))" stroke="rgb(var(--v-theme-surface))" stroke-width="1.5"/>`;
   }
-  return `<svg width="100%" height="100%" viewBox="0 0 180 180" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
+
+  if (axisLabels?.length === n) {
+    const labelR = R + 22;
+    const fill = 'rgba(var(--v-theme-on-surface), 0.75)';
+    for (let i = 0; i < n; i++) {
+      const a = (Math.PI * 2 * i) / n - Math.PI / 2;
+      const lx = cx + labelR * Math.cos(a);
+      const ly = cy + labelR * Math.sin(a);
+      inner += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${fill}" font-size="14" font-weight="500" font-family="inherit">${escapeSvgText(axisLabels[i] ?? '')}</text>`;
+    }
+  }
+
+  return `<svg width="100%" height="100%" viewBox="0 0 ${vb} ${vb}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
 }

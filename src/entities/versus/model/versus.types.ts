@@ -5,7 +5,10 @@ export type { PentagonDto };
 export interface VersusOpeningCard {
   name: string;
   wins: number;
+  draws: number;
+  losses: number;
   total: number;
+  /** Versus frequent openings: (wins + 0.5 * draws) / total as a percentage; field name is historical. */
   winRatePct: number;
 }
 
@@ -20,7 +23,8 @@ export interface VersusSideSummary {
   winRatePct: number | null;
   blundersPerGame: number | null;
   conversionPct: number | null;
-  openings: VersusOpeningCard[];
+  openingsAsWhite: VersusOpeningCard[];
+  openingsAsBlack: VersusOpeningCard[];
 }
 
 export interface VersusPlanEntry {

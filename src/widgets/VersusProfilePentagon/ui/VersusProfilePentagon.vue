@@ -2,13 +2,15 @@
   <v-card class="mb-4">
     <v-card-title>{{ t('versusPage.sectionProfile') }}</v-card-title>
     <v-card-text>
-      <v-row align="center">
-        <v-col cols="12" lg="auto" class="d-flex justify-center">
-          <div ref="pentagonSvgHost" class="versus-pentagon-host" />
-        </v-col>
-        <v-col cols="12" lg>
-          <div class="d-flex flex-wrap ga-4 mb-4 text-caption">
-            <span class="d-inline-flex align-center ga-1 text-primary">
+      <div class="versus-profile-grid">
+        <div
+          class="versus-pentagon-wrap d-flex justify-center align-center versus-pentagon-col w-100 h-100"
+        >
+          <div ref="pentagonSvgHost" class="versus-pentagon-host w-100" />
+        </div>
+        <div class="versus-bars-block w-100 h-100 d-flex flex-column">
+          <div class="versus-bars-legend d-flex flex-wrap ga-4 mb-2 text-caption flex-shrink-0">
+            <span class="d-inline-flex align-center ga-1 text-info">
               <v-icon icon="mdi-minus" size="18" />
               {{ t('versusPage.pentagonLegendYou') }}
             </span>
@@ -21,11 +23,12 @@
               }}
             </span>
           </div>
-          <div
-            v-for="row in pentagonLegendRows"
-            :key="row.key"
-            class="d-flex align-start align-sm-center ga-3 mb-3"
-          >
+          <div class="versus-bars-rows d-flex flex-column flex-grow-1">
+            <div
+              v-for="row in pentagonLegendRows"
+              :key="row.key"
+              class="versus-bars-row d-flex align-start align-sm-center ga-3"
+            >
             <span
               class="text-caption text-medium-emphasis flex-shrink-0"
               style="width: 6.5rem"
@@ -37,11 +40,11 @@
                   :model-value="row.you"
                   height="6"
                   rounded
-                  color="primary"
+                  color="info"
                   class="flex-grow-1"
                 />
                 <span
-                  class="text-caption flex-shrink-0 text-primary versus-mono"
+                  class="text-caption flex-shrink-0 text-info versus-mono"
                   style="width: 1.75rem; text-align: right"
                   >{{ rounded(row.youRaw) }}</span
                 >
@@ -62,8 +65,9 @@
               </div>
             </div>
           </div>
-        </v-col>
-      </v-row>
+        </div>
+        </div>
+      </div>
     </v-card-text>
   </v-card>
 </template>
@@ -85,7 +89,15 @@ const { t } = useI18n();
 
 const sliceRef = computed(() => props.slice ?? null);
 
-const { pentagonSvgHost } = useVersusPentagonChart(sliceRef);
+const pentagonAxisLabels = computed(() => [
+  t('home.profileMetric.accuracy'),
+  t('home.profileMetric.stability'),
+  t('home.profileMetric.conversion'),
+  t('home.profileMetric.openings'),
+  t('home.profileMetric.endgame'),
+]);
+
+const { pentagonSvgHost } = useVersusPentagonChart(sliceRef, pentagonAxisLabels);
 
 const pentagonLegendRows = computed(() => {
   const x = props.slice;
@@ -120,20 +132,66 @@ function rounded(v: number): number {
 </script>
 
 <style scoped lang="scss">
+.versus-profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 1280px) {
+  .versus-profile-grid {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 1279px) {
+  .versus-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .versus-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
 }
 
 .versus-pentagon-host {
+  box-sizing: border-box;
   width: 100%;
-  max-width: 320px;
+  max-width: 100%;
   aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 1280px) {
+  .versus-pentagon-col {
+    min-width: 0;
+  }
 }
 
 .versus-pentagon-host :deep(svg) {
   display: block;
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.versus-bars-rows {
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: space-between;
+}
+
+.versus-bars-row {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
 }
 </style>

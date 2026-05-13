@@ -8,7 +8,7 @@
             <th class="text-left text-caption text-medium-emphasis text-uppercase">
               {{ t('versusPage.colMetric') }}
             </th>
-            <th class="text-center text-caption text-medium-emphasis text-uppercase text-primary">
+            <th class="text-center text-caption text-medium-emphasis text-uppercase text-info">
               {{ t('versusPage.colYou') }}
             </th>
             <th class="text-center text-caption text-medium-emphasis text-uppercase text-warning">
@@ -20,20 +20,14 @@
         <tbody>
           <tr v-for="m in metricTable" :key="m.key">
             <td class="text-body-2 text-medium-emphasis">{{ m.label }}</td>
-            <td
-              class="text-center versus-mono"
-              :class="m.win === 'you' ? 'text-success font-weight-bold' : 'text-primary'"
-            >
+            <td class="text-center versus-mono" :class="youCellClass(m.win)">
               {{ m.youFmt }}
             </td>
-            <td
-              class="text-center versus-mono"
-              :class="m.win === 'opp' ? 'text-success font-weight-bold' : 'text-warning'"
-            >
+            <td class="text-center versus-mono" :class="oppCellClass(m.win)">
               {{ m.oppFmt }}
             </td>
             <td class="text-center">
-              <v-chip v-if="m.win === 'you'" size="small" color="primary" variant="tonal">
+              <v-chip v-if="m.win === 'you'" size="small" color="info" variant="tonal">
                 {{ t('versusPage.verdictYou') }}
               </v-chip>
               <v-chip v-else-if="m.win === 'opp'" size="small" color="warning" variant="tonal">
@@ -54,7 +48,7 @@
 // Composite widget: presents a focused dashboard block; reads shared Pinia stores and Tauri invoke where needed.
 
 import type { VersusSpeedSlice } from '@/entities/versus';
-import { buildVersusMetricTable } from '@/entities/versus/lib/versusMetrics';
+import { buildVersusMetricTable, type WinCell } from '@/entities/versus/lib/versusMetrics';
 import { useI18n } from '@/shared/lib/i18n';
 import { computed } from 'vue';
 
@@ -68,6 +62,20 @@ const { t } = useI18n();
 const metricTable = computed(() =>
   buildVersusMetricTable(props.slice.selfSide, props.slice.opponentSide, props.speedLabel, t),
 );
+
+function youCellClass(win: WinCell): string {
+  if (win === 'you') return 'text-success font-weight-bold';
+  if (win === 'tie') return 'text-success';
+  if (win === 'opp') return 'text-error';
+  return '';
+}
+
+function oppCellClass(win: WinCell): string {
+  if (win === 'opp') return 'text-success font-weight-bold';
+  if (win === 'tie') return 'text-success';
+  if (win === 'you') return 'text-error';
+  return '';
+}
 </script>
 
 <style scoped lang="scss">

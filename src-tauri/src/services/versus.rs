@@ -32,13 +32,17 @@ const SELF_OPENINGS_RECENT_LIMIT: u32 = 2000; // Wide window for opening aggrega
 const ANALYSIS_DEPTH: u8 = 8; // Shallow depth for transient opponent runs: rankable signal vs full game analysis cost.
 const MIN_OPENING_GAMES_SHOW: i64 = 3; // Hide ultra-noisy opening rows; fewer games than this yields misleading %.
 const MIN_OPENING_GAMES_GP: i64 = 6; // Game-plan suggestions need slightly more data than cards to avoid flip-flop advice.
+const VERSUS_OPENINGS_PER_COLOR: usize = 2; // Frequent-openings block: top families per color.
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersusOpeningCard {
     pub name: String,
     pub wins: u32,
+    pub draws: u32,
+    pub losses: u32,
     pub total: u32,
+    /// Versus frequent-openings cards: `(wins + 0.5 * draws) / total` as a percentage; serialized as `winRatePct`.
     pub win_rate_pct: f64,
 }
 
@@ -79,7 +83,8 @@ pub struct VersusSideSummary {
     pub win_rate_pct: Option<f64>,
     pub blunders_per_game: Option<f64>,
     pub conversion_pct: Option<f64>,
-    pub openings: Vec<VersusOpeningCard>,
+    pub openings_as_white: Vec<VersusOpeningCard>,
+    pub openings_as_black: Vec<VersusOpeningCard>,
 }
 
 #[derive(Debug, Serialize)]
@@ -165,8 +170,46 @@ fn win_rate_pct(wins: i64, total: i64) -> f64 {
     (100.0 * wins as f64 / total as f64).clamp(0.0, 100.0)
 }
 
-fn aggregate_openings(games: &[Game], player_color_filter: Option<&str>) -> HashMap<String, (i64, i64)> {
-    let mut m: HashMap<String, (i64, i64)> = HashMap::new();
+/// Opening "family" label: text before the first `:` (Lichess `Main: Variation` pattern), else full trimmed name.
+fn opening_family_label(raw: &str) -> String {
+    let s = raw.trim();
+    let head = s.split_once(':').map(|(a, _)| a.trim()).unwrap_or(s);
+    if head.is_empty() {
+        s.to_string()
+    } else {
+        head.to_string()
+    }
+}
+
+fn opening_score_pct(wins: i64, draws: i64, total: i64) -> f64 {
+    if total <= 0 {
+        return 0.0;
+    }
+    (100.0 * (wins as f64 + 0.5 * draws as f64) / total as f64).clamp(0.0, 100.0)
+}
+
+fn merge_opening_rows_by_family(rows: Vec<OpeningAggregateRow>) -> Vec<OpeningAggregateRow> {
+    let mut m: HashMap<String, OpeningAggregateRow> = HashMap::new();
+    for r in rows {
+        let key = opening_family_label(&r.opening_name);
+        let entry = m.entry(key.clone()).or_insert_with(|| OpeningAggregateRow {
+            opening_name: key.clone(),
+            wins: 0,
+            losses: 0,
+            draws: 0,
+            total: 0,
+        });
+        entry.wins += r.wins;
+        entry.losses += r.losses;
+        entry.draws += r.draws;
+        entry.total += r.total;
+    }
+    m.into_values().collect()
+}
+
+/// Per full `opening_name` from Lichess: `(wins, draws, total)`.
+fn aggregate_openings(games: &[Game], player_color_filter: Option<&str>) -> HashMap<String, (i64, i64, i64)> {
+    let mut m: HashMap<String, (i64, i64, i64)> = HashMap::new();
     for g in games {
         if player_color_filter.is_some_and(|c| g.player_color != c) {
             continue;
@@ -177,10 +220,12 @@ fn aggregate_openings(games: &[Game], player_color_filter: Option<&str>) -> Hash
         if name_raw.is_empty() {
             continue;
         }
-        let e = m.entry(name_raw).or_insert((0, 0));
-        e.1 += 1;
-        if g.player_result == "win" {
-            e.0 += 1;
+        let e = m.entry(name_raw).or_insert((0, 0, 0));
+        e.2 += 1;
+        match g.player_result.as_str() {
+            "win" => e.0 += 1,
+            "draw" => e.1 += 1,
+            _ => {}
         }
     }
     m
@@ -193,8 +238,10 @@ fn rows_to_cards(rows: &[OpeningAggregateRow], take: usize) -> Vec<VersusOpening
         .map(|r| VersusOpeningCard {
             name: r.opening_name.clone(),
             wins: r.wins.max(0) as u32,
+            draws: r.draws.max(0) as u32,
+            losses: r.losses.max(0) as u32,
             total: r.total.max(0) as u32,
-            win_rate_pct: win_rate_pct(r.wins, r.total),
+            win_rate_pct: opening_score_pct(r.wins, r.draws, r.total),
         })
         .collect();
     v.sort_by(|a, b| {
@@ -206,30 +253,33 @@ fn rows_to_cards(rows: &[OpeningAggregateRow], take: usize) -> Vec<VersusOpening
     v
 }
 
-fn map_agg_hash_to_cards(m: HashMap<String, (i64, i64)>, take: usize) -> Vec<VersusOpeningCard> {
-    let mut rows: Vec<OpeningAggregateRow> = m
+fn map_agg_hash_to_cards(m: HashMap<String, (i64, i64, i64)>, take: usize) -> Vec<VersusOpeningCard> {
+    let rows: Vec<OpeningAggregateRow> = m
         .into_iter()
-        .map(|(opening_name, (wins, total))| OpeningAggregateRow {
-            opening_name,
-            wins,
-            losses: 0,
-            draws: 0,
-            total,
+        .map(|(opening_name, (wins, draws, total))| {
+            let losses = (total - wins - draws).max(0);
+            OpeningAggregateRow {
+                opening_name,
+                wins,
+                losses,
+                draws,
+                total,
+            }
         })
         .collect();
-    rows.retain(|r| r.total >= MIN_OPENING_GAMES_SHOW);
-    rows_to_cards(&rows, take)
+    let merged = merge_opening_rows_by_family(rows);
+    rows_to_cards(&merged, take)
 }
 
-fn pick_plan_side(map: HashMap<String, (i64, i64)>) -> VersusPlanSide {
+fn pick_plan_side(map: HashMap<String, (i64, i64, i64)>) -> VersusPlanSide {
     let mut scored: Vec<(String, i64, i64, f64)> = map
         .into_iter()
-        .filter(|(_, (w, tot))| {
+        .filter(|(_, (w, _d, tot))| {
             let tot = *tot;
             let w = *w;
             tot >= MIN_OPENING_GAMES_GP && w >= 0 && tot >= w
         })
-        .map(|(name, (wins, total))| {
+        .map(|(name, (wins, _draws, total))| {
             let pct = win_rate_pct(wins, total);
             (name, wins, total, pct)
         })
@@ -314,7 +364,8 @@ fn summary_side(
     rating: Option<i64>,
     rows: &[MetricGameRow],
     bench: PentagonDto,
-    openings: Vec<VersusOpeningCard>,
+    openings_as_white: Vec<VersusOpeningCard>,
+    openings_as_black: Vec<VersusOpeningCard>,
 ) -> VersusSideSummary {
     let pent = pentagon_from_metrics(rows, &bench);
     VersusSideSummary {
@@ -328,7 +379,8 @@ fn summary_side(
         avg_acpl: mean_acpl(rows),
         win_rate_pct: win_rate(rows),
         blunders_per_game: mean_blunders(rows),
-        openings,
+        openings_as_white,
+        openings_as_black,
     }
 }
 
@@ -353,7 +405,8 @@ struct VersusSpeedDraft {
     opponent_username_display: String,
     opp_rating: Option<i64>,
     bench_opp: PentagonDto,
-    opp_open_cards: Vec<VersusOpeningCard>,
+    opp_open_white: Vec<VersusOpeningCard>,
+    opp_open_black: Vec<VersusOpeningCard>,
     to_analyze: Vec<Game>,
     game_plan: Option<VersusGamePlan>,
 }
@@ -387,14 +440,26 @@ fn prepare_versus_speed_slice(
     )
     .map_err(|e| e.to_string())?;
 
-    let self_agg = games_repo::versus_opening_stats_recent(
+    let self_white_agg = games_repo::versus_opening_stats_recent_for_color(
         conn,
         &user.username,
         speed_lc,
         SELF_OPENINGS_RECENT_LIMIT,
+        "white",
     )
     .map_err(|e| e.to_string())?;
-    let self_open_cards = rows_to_cards(&self_agg, 4);
+    let self_black_agg = games_repo::versus_opening_stats_recent_for_color(
+        conn,
+        &user.username,
+        speed_lc,
+        SELF_OPENINGS_RECENT_LIMIT,
+        "black",
+    )
+    .map_err(|e| e.to_string())?;
+    let self_open_white =
+        rows_to_cards(&merge_opening_rows_by_family(self_white_agg), VERSUS_OPENINGS_PER_COLOR);
+    let self_open_black =
+        rows_to_cards(&merge_opening_rows_by_family(self_black_agg), VERSUS_OPENINGS_PER_COLOR);
 
     let bucket_you = benchmarks::bucket_key_for_rating(self_rating.unwrap_or(1500));
     let (bench_you_pent, _) = benchmarks::pentagon_and_label(&bucket_you)
@@ -406,7 +471,14 @@ fn prepare_versus_speed_slice(
         .ok_or_else(|| format!("Unknown benchmark bucket: {}", bucket_opp))?;
     let bench_opp = PentagonDto::from(bench_opp_pent);
 
-    let opp_open_cards = map_agg_hash_to_cards(aggregate_openings(opp_games_speed, None), 4);
+    let opp_open_white = map_agg_hash_to_cards(
+        aggregate_openings(opp_games_speed, Some("white")),
+        VERSUS_OPENINGS_PER_COLOR,
+    );
+    let opp_open_black = map_agg_hash_to_cards(
+        aggregate_openings(opp_games_speed, Some("black")),
+        VERSUS_OPENINGS_PER_COLOR,
+    );
 
     // Newest games first carry the opponent’s current rating context; older tail rarely changes the pentagon mean.
     let to_analyze: Vec<Game> = opp_games_speed
@@ -426,7 +498,8 @@ fn prepare_versus_speed_slice(
         self_rating,
         &self_rows,
         bench_you,
-        self_open_cards,
+        self_open_white,
+        self_open_black,
     );
 
     Ok(VersusSpeedDraft {
@@ -436,7 +509,8 @@ fn prepare_versus_speed_slice(
         opponent_username_display,
         opp_rating,
         bench_opp,
-        opp_open_cards,
+        opp_open_white,
+        opp_open_black,
         to_analyze,
         game_plan: gp,
     })
@@ -499,7 +573,8 @@ async fn versus_finish_speed_slice(
         draft.opp_rating,
         &opp_metric_rows,
         draft.bench_opp,
-        draft.opp_open_cards,
+        draft.opp_open_white,
+        draft.opp_open_black,
     );
 
     Ok(VersusSpeedSlice {
@@ -638,5 +713,53 @@ fn transient_to_metric(game: &Game, t: &TransientAnalysisResult) -> MetricGameRo
             .iter()
             .any(|tag| tag == "opening_blunder"),
         endgame_blunder: t.pattern_tags.iter().any(|tag| tag == "endgame_blunder"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn opening_family_label_strips_variation() {
+        assert_eq!(
+            opening_family_label("  Modern Defense: Some Line  "),
+            "Modern Defense"
+        );
+        assert_eq!(opening_family_label("French Defense"), "French Defense");
+    }
+
+    #[test]
+    fn opening_score_pct_counts_half_draws() {
+        assert!((opening_score_pct(1, 2, 4) - 50.0).abs() < 1e-9);
+        assert!((opening_score_pct(2, 0, 4) - 50.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn merge_opening_rows_by_family_sums_lines() {
+        let rows = vec![
+            OpeningAggregateRow {
+                opening_name: "Scandinavian Defense: Main Line".into(),
+                wins: 2,
+                losses: 1,
+                draws: 1,
+                total: 4,
+            },
+            OpeningAggregateRow {
+                opening_name: "Scandinavian Defense: Mieses".into(),
+                wins: 1,
+                losses: 0,
+                draws: 1,
+                total: 2,
+            },
+        ];
+        let merged = merge_opening_rows_by_family(rows);
+        assert_eq!(merged.len(), 1);
+        let m = &merged[0];
+        assert_eq!(m.opening_name, "Scandinavian Defense");
+        assert_eq!(m.wins, 3);
+        assert_eq!(m.draws, 2);
+        assert_eq!(m.total, 6);
+        assert!((opening_score_pct(m.wins, m.draws, m.total) - (100.0 * 4.0 / 6.0)).abs() < 1e-9);
     }
 }

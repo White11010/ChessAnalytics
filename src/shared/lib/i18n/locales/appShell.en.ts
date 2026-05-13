@@ -81,7 +81,7 @@ export const appShellEn = {
     opponentFallback: 'Opponent',
     sectionProfile: 'Game profile',
     sectionMetrics: 'Detailed comparison',
-    openingPrefs: 'Opening preferences',
+    openingPrefs: 'Frequent openings',
     conclusion: 'Takeaways',
     gamePlanTitle: 'Game plan',
     gamePlanSubtitle: 'How to play vs {name}',

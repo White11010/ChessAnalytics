@@ -3,7 +3,7 @@
     <v-col cols="12" md>
       <v-card
         variant="tonal"
-        color="primary"
+        color="info"
         class="h-100 pa-3 d-flex align-center justify-space-between ga-3"
       >
         <span class="text-subtitle-1 font-weight-medium text-truncate">

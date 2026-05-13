@@ -81,7 +81,7 @@ export const appShellRu = {
     opponentFallback: 'Соперник',
     sectionProfile: 'Профиль игры',
     sectionMetrics: 'Детальное сравнение',
-    openingPrefs: 'Дебютные предпочтения',
+    openingPrefs: 'Частые дебюты',
     conclusion: 'Вывод',
     gamePlanTitle: 'Game Plan',
     gamePlanSubtitle: 'Как играть против {name}',

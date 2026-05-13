@@ -5,7 +5,7 @@
       <v-col cols="12" md="6">
         <v-card class="h-100 versus-conc-you">
           <v-card-title class="d-flex align-center ga-2 text-subtitle-1">
-            <v-icon icon="mdi-circle" size="12" color="primary" />
+            <v-icon icon="mdi-circle" size="12" color="info" />
             {{ slice.selfSide.username }}
           </v-card-title>
           <v-card-text>
@@ -86,7 +86,7 @@ const conclusionsOpp = computed(() =>
 }
 
 .versus-conc-you {
-  border-top: 3px solid rgb(var(--v-theme-primary)) !important;
+  border-top: 3px solid rgb(var(--v-theme-info)) !important;
 }
 
 .versus-conc-opp {

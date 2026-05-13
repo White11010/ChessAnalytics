@@ -491,12 +491,13 @@ pub struct OpeningAggregateRow {
     pub total: i64,
 }
 
-/// Versus openings: aggregates wins/losses/draws per opening name over the newest `recent_limit` rated games at `speed`.
-pub fn versus_opening_stats_recent(
+/// Versus openings: aggregates wins/losses/draws per opening name over the newest `recent_limit` rated games at `speed` for `player_color` (`white` | `black`).
+pub fn versus_opening_stats_recent_for_color(
     conn: &Connection,
     username: &str,
     speed: &str,
     recent_limit: u32,
+    player_color: &str,
 ) -> rusqlite::Result<Vec<OpeningAggregateRow>> {
     let mut stmt = conn.prepare(
         "
@@ -513,6 +514,7 @@ pub fn versus_opening_stats_recent(
               AND platform = 'Lichess'
               AND rated = 1
               AND speed = ?2
+              AND player_color = ?4
               AND opening_name IS NOT NULL
               AND TRIM(opening_name) <> ''
             ORDER BY created_at DESC
@@ -522,7 +524,7 @@ pub fn versus_opening_stats_recent(
         ",
     )?;
 
-    let rows = stmt.query_map(params![username, speed, recent_limit], |row| {
+    let rows = stmt.query_map(params![username, speed, recent_limit, player_color], |row| {
         Ok(OpeningAggregateRow {
             opening_name: row.get(0)?,
             wins: row.get::<_, i64>(1)?,
