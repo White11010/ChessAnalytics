@@ -46,7 +46,7 @@
                 <span
                   class="text-caption flex-shrink-0 text-info versus-mono"
                   style="width: 1.75rem; text-align: right"
-                  >{{ rounded(row.youRaw) }}</span
+                  >{{ formatAxisValue(row.youRaw, row.youHasData) }}</span
                 >
               </div>
               <div class="d-flex align-center ga-2">
@@ -60,7 +60,7 @@
                 <span
                   class="text-caption flex-shrink-0 text-warning versus-mono"
                   style="width: 1.75rem; text-align: right"
-                  >{{ rounded(row.oppRaw) }}</span
+                  >{{ formatAxisValue(row.oppRaw, row.oppHasData) }}</span
                 >
               </div>
             </div>
@@ -76,7 +76,7 @@
 // Composite widget: presents a focused dashboard block; reads shared Pinia stores and Tauri invoke where needed.
 
 import type { VersusSpeedSlice } from '@/entities/versus';
-import { pentagonAxisNumber } from '@/entities/versus/lib/versusConclusions';
+import { pentagonAxisNumber } from '@/entities/versus/lib/pentagonAxis';
 import { useVersusPentagonChart } from '@/entities/versus/lib/useVersusPentagonChart';
 import { useI18n } from '@/shared/lib/i18n';
 import { computed } from 'vue';
@@ -111,23 +111,38 @@ const pentagonLegendRows = computed(() => {
     { key: 'endgame' as const, label: t('home.profileMetric.endgame'), axis: 'endgame' as const },
   ];
   return defs.map(({ key, label, axis }) => {
+    const youHasData =
+      axis === 'conversion' ? py?.conversion != null : py != null;
+    const oppHasData =
+      axis === 'conversion' ? po?.conversion != null : po != null;
     const youRaw =
-      axis === 'conversion' ? (py?.conversion ?? 0) : pentagonAxisNumber(py, axis);
+      axis === 'conversion'
+        ? (py?.conversion ?? 0)
+        : youHasData
+          ? pentagonAxisNumber(py, axis)
+          : 0;
     const oppRaw =
-      axis === 'conversion' ? (po?.conversion ?? 0) : pentagonAxisNumber(po, axis);
+      axis === 'conversion'
+        ? (po?.conversion ?? 0)
+        : oppHasData
+          ? pentagonAxisNumber(po, axis)
+          : 0;
     return {
       key,
       label,
       youRaw,
       oppRaw,
-      you: Math.min(100, Math.max(0, youRaw)),
-      opp: Math.min(100, Math.max(0, oppRaw)),
+      youHasData,
+      oppHasData,
+      you: youHasData ? Math.min(100, Math.max(0, youRaw)) : 0,
+      opp: oppHasData ? Math.min(100, Math.max(0, oppRaw)) : 0,
     };
   });
 });
 
-function rounded(v: number): number {
-  return Math.round(v);
+function formatAxisValue(v: number, hasData: boolean): string {
+  if (!hasData) return String(t('common.emDash'));
+  return String(Math.round(v));
 }
 </script>
 

@@ -14,7 +14,9 @@
             <th class="text-center text-caption text-medium-emphasis text-uppercase text-warning">
               {{ t('versusPage.colOpp', { name: slice.opponentSide.username }) }}
             </th>
-            <th class="text-caption text-medium-emphasis text-uppercase" />
+            <th class="text-center text-caption text-medium-emphasis text-uppercase" aria-hidden="true">
+              <v-icon icon="mdi-trophy" size="small" />
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -27,12 +29,24 @@
               {{ m.oppFmt }}
             </td>
             <td class="text-center">
-              <v-chip v-if="m.win === 'you'" size="small" color="info" variant="tonal">
-                {{ t('versusPage.verdictYou') }}
-              </v-chip>
-              <v-chip v-else-if="m.win === 'opp'" size="small" color="warning" variant="tonal">
-                {{ t('versusPage.verdictOpp', { name: slice.opponentSide.username }) }}
-              </v-chip>
+              <div
+                v-if="m.win === 'you'"
+                class="d-inline-flex align-center justify-center ga-1 flex-wrap"
+              >
+                <v-icon icon="mdi-trophy" size="small" color="info" aria-hidden="true" />
+                <v-chip size="small" color="info" variant="tonal">
+                  {{ t('versusPage.verdictYou') }}
+                </v-chip>
+              </div>
+              <div
+                v-else-if="m.win === 'opp'"
+                class="d-inline-flex align-center justify-center ga-1 flex-wrap"
+              >
+                <v-icon icon="mdi-trophy" size="small" color="warning" aria-hidden="true" />
+                <v-chip size="small" color="warning" variant="tonal">
+                  {{ t('versusPage.verdictOpp', { name: slice.opponentSide.username }) }}
+                </v-chip>
+              </div>
               <v-chip v-else-if="m.win === 'tie'" size="small" color="secondary" variant="tonal">
                 {{ t('versusPage.verdictTie') }}
               </v-chip>

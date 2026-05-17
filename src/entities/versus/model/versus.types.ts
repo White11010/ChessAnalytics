@@ -2,6 +2,13 @@ import type { PentagonDto } from '@/entities/player-profile-chart';
 
 export type { PentagonDto };
 
+/** Full Lichess opening line within a merged family; frequencies sum to the family card `total`. */
+export interface VersusOpeningLineShare {
+  name: string;
+  total: number;
+  frequencyPct: number;
+}
+
 export interface VersusOpeningCard {
   name: string;
   wins: number;
@@ -10,6 +17,8 @@ export interface VersusOpeningCard {
   total: number;
   /** Versus frequent openings: (wins + 0.5 * draws) / total as a percentage; field name is historical. */
   winRatePct: number;
+  /** Lines grouped under this family (from Tauri); empty if missing in older payloads. */
+  lines?: VersusOpeningLineShare[];
 }
 
 export interface VersusSideSummary {
@@ -27,14 +36,30 @@ export interface VersusSideSummary {
   openingsAsBlack: VersusOpeningCard[];
 }
 
+export type VersusPlanReasonKind =
+  | 'tier1GapPlay'
+  | 'tier1GapAvoid'
+  | 'tier2SelfBest'
+  | 'tier2SelfWorst'
+  | 'tier2OppWeak'
+  | 'tier2OppStrong'
+  | 'tier3SelfTop'
+  | 'tier3SelfBottom';
+
 export interface VersusPlanEntry {
   title: string;
-  subtitle: string;
-  tier: string;
+  selectionTier: 1 | 2 | 3;
+  reasonKind: VersusPlanReasonKind;
+  reasonParams: Record<string, string | number>;
+  tier: 'play' | 'avoid';
+  selfWinRatePct?: number;
+  oppWinRatePct?: number;
+  selfGames: number;
+  oppGames: number;
 }
 
 export interface VersusPlanSide {
-  attack: VersusPlanEntry[];
+  play: VersusPlanEntry[];
   avoid: VersusPlanEntry[];
 }
 

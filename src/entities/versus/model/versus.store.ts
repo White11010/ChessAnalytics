@@ -69,6 +69,7 @@ export const useVersusStore = defineStore('versus', {
         });
         if (mySeq !== this.compareSeq) return;
         this.result = res;
+        console.log('compare', res);
       } catch (e) {
         if (mySeq !== this.compareSeq) return;
         const msg = e instanceof Error ? e.message : String(e);

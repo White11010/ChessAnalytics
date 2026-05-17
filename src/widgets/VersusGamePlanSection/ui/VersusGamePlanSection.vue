@@ -18,65 +18,48 @@
       {{ t('versusPage.gpEmpty') }}
     </v-card-text>
     <template v-else>
-      <v-row no-gutters>
-        <v-col cols="12" md class="pa-4">
-          <div class="text-subtitle-2 d-flex align-center ga-2 mb-4 pb-2 border-b-sm">
-            <span aria-hidden="true">♔</span>
-            {{ t('versusPage.gpWhite') }}
+      <div class="versus-game-plan-layout pa-4">
+        <div class="versus-game-plan-divider-rail d-none d-md-flex">
+          <v-divider vertical class="versus-game-plan-divider" />
+        </div>
+        <div class="versus-game-plan-content">
+          <div class="versus-game-plan-row mb-4 pb-2 border-b-sm">
+            <div class="text-subtitle-2 d-flex align-center ga-2">
+              <span aria-hidden="true">♔</span>
+              {{ t('versusPage.gpWhite') }}
+            </div>
+            <div class="text-subtitle-2 text-medium-emphasis d-flex align-center ga-2">
+              <span aria-hidden="true">♚</span>
+              {{ t('versusPage.gpBlack') }}
+            </div>
           </div>
-          <VersusGamePlanBlock
-            :label="t('versusPage.gpAttack')"
-            tier="attack"
-            :entries="slice.gamePlan.asWhite.attack"
+          <VersusGamePlanTierGrid
+            :label="t('versusPage.gpPlay')"
+            tier="play"
+            :white-entries="slice.gamePlan.asWhite.play"
+            :black-entries="slice.gamePlan.asBlack.play"
           />
-          <VersusGamePlanBlock
-            class="mt-4"
+          <VersusGamePlanTierGrid
+            root-class="mt-6"
             :label="t('versusPage.gpAvoid')"
             tier="avoid"
-            :entries="slice.gamePlan.asWhite.avoid"
+            :white-entries="slice.gamePlan.asWhite.avoid"
+            :black-entries="slice.gamePlan.asBlack.avoid"
           />
-        </v-col>
-        <v-col cols="12" md="auto" class="d-none d-md-flex align-stretch pa-0 justify-center">
-          <v-divider vertical />
-        </v-col>
-        <v-col cols="12" md class="pa-4">
-          <div
-            class="text-subtitle-2 text-medium-emphasis d-flex align-center ga-2 mb-4 pb-2 border-b-sm"
-          >
-            <span aria-hidden="true">♚</span>
-            {{ t('versusPage.gpBlack') }}
-          </div>
-          <VersusGamePlanBlock
-            :label="t('versusPage.gpAttack')"
-            tier="attack"
-            :entries="slice.gamePlan.asBlack.attack"
-          />
-          <VersusGamePlanBlock
-            class="mt-4"
-            :label="t('versusPage.gpAvoid')"
-            tier="avoid"
-            :entries="slice.gamePlan.asBlack.avoid"
-          />
-        </v-col>
-      </v-row>
+        </div>
+      </div>
     </template>
     <v-divider />
     <v-alert class="mt-6" variant="tonal" type="info" :text="t('versusPage.gpFooterHint')" />
-    <!-- <v-card-actions class="text-caption text-medium-emphasis px-4 py-3 bg-surface-variant">
-      <v-icon icon="mdi-lightbulb-outline" size="small" class="me-2 flex-shrink-0" />
-      <span>{{ t('versusPage.gpFooterHint') }}</span>
-    </v-card-actions> -->
   </v-card>
 </template>
 
 <script setup lang="ts">
-// Composite widget: presents a focused dashboard block; reads shared Pinia stores and Tauri invoke where needed.
-
 import type { VersusSpeedSlice } from '@/entities/versus';
 import { useI18n } from '@/shared/lib/i18n';
 import { computed } from 'vue';
 
-import VersusGamePlanBlock from './VersusGamePlanBlock.vue';
+import VersusGamePlanTierGrid from './VersusGamePlanTierGrid.vue';
 
 const props = defineProps<{
   slice: VersusSpeedSlice;
@@ -88,9 +71,9 @@ const gamePlanEmpty = computed(() => {
   const g = props.slice.gamePlan;
   if (!g) return true;
   const sum =
-    g.asWhite.attack.length +
+    g.asWhite.play.length +
     g.asWhite.avoid.length +
-    g.asBlack.attack.length +
+    g.asBlack.play.length +
     g.asBlack.avoid.length;
   return sum === 0;
 });
@@ -104,5 +87,46 @@ const gamePlanEmpty = computed(() => {
 
 .border-b-sm {
   border-bottom: thin solid rgba(var(--v-theme-on-surface), 0.08);
+}
+
+.versus-game-plan-layout {
+  position: relative;
+}
+
+.versus-game-plan-divider-rail {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  align-items: stretch;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.versus-game-plan-divider {
+  height: 100%;
+  opacity: 1;
+}
+
+.versus-game-plan-content {
+  position: relative;
+  z-index: 0;
+}
+
+.versus-game-plan-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 48px;
+  align-items: stretch;
+}
+
+@media (max-width: 959px) {
+  .versus-game-plan-row {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+    column-gap: 0;
+  }
 }
 </style>

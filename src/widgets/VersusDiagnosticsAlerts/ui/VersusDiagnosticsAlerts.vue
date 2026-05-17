@@ -1,6 +1,21 @@
 <template>
   <div class="versus-diagnostics">
     <v-alert
+      v-if="ratingGap != null && ratingGap > 200"
+      density="compact"
+      variant="tonal"
+      type="warning"
+      class="mb-3"
+      :text="
+        String(
+          t('versusPage.ratingGapWarning', {
+            gap: ratingGap,
+            speed: speedLabel,
+          }),
+        )
+      "
+    />
+    <v-alert
       v-if="slice.selfSide.sampleSizeMetrics < 5"
       density="compact"
       variant="tonal"
@@ -80,12 +95,20 @@
 
 import type { VersusSpeedSlice } from '@/entities/versus';
 import { useI18n } from '@/shared/lib/i18n';
+import { computed } from 'vue';
 
-defineProps<{
+const props = defineProps<{
   slice: VersusSpeedSlice;
   opponentGamesInApiSample: number;
   speedLabel: string;
 }>();
 
 const { t } = useI18n();
+
+const ratingGap = computed(() => {
+  const a = props.slice.selfSide.rating;
+  const b = props.slice.opponentSide.rating;
+  if (a == null || b == null) return null;
+  return Math.abs(a - b);
+});
 </script>

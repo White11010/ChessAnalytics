@@ -13,15 +13,11 @@
               {{ t('versusPage.gpWhite') }}:
             </div>
             <v-list density="compact" class="py-0">
-              <v-list-item
+              <versus-opening-compare-item
                 v-for="(o, i) in slice.selfSide.openingsAsWhite"
                 :key="'sw-' + i + '-' + o.name"
-                :title="o.name"
-              >
-                <template #append>
-                  <opening-stat-append :o="o" />
-                </template>
-              </v-list-item>
+                :o="o"
+              />
               <v-list-item v-if="!slice.selfSide.openingsAsWhite.length">
                 <v-list-item-title class="text-caption text-medium-emphasis">—</v-list-item-title>
               </v-list-item>
@@ -30,15 +26,11 @@
               {{ t('versusPage.gpBlack') }}:
             </div>
             <v-list density="compact" class="py-0">
-              <v-list-item
+              <versus-opening-compare-item
                 v-for="(o, i) in slice.selfSide.openingsAsBlack"
                 :key="'sb-' + i + '-' + o.name"
-                :title="o.name"
-              >
-                <template #append>
-                  <opening-stat-append :o="o" />
-                </template>
-              </v-list-item>
+                :o="o"
+              />
               <v-list-item v-if="!slice.selfSide.openingsAsBlack.length">
                 <v-list-item-title class="text-caption text-medium-emphasis">—</v-list-item-title>
               </v-list-item>
@@ -57,15 +49,11 @@
               {{ t('versusPage.gpWhite') }}:
             </div>
             <v-list density="compact" class="py-0">
-              <v-list-item
+              <versus-opening-compare-item
                 v-for="(o, i) in slice.opponentSide.openingsAsWhite"
                 :key="'ow-' + i + '-' + o.name"
-                :title="o.name"
-              >
-                <template #append>
-                  <opening-stat-append :o="o" />
-                </template>
-              </v-list-item>
+                :o="o"
+              />
               <v-list-item v-if="!slice.opponentSide.openingsAsWhite.length">
                 <v-list-item-title class="text-caption text-medium-emphasis">—</v-list-item-title>
               </v-list-item>
@@ -74,15 +62,11 @@
               {{ t('versusPage.gpBlack') }}:
             </div>
             <v-list density="compact" class="py-0">
-              <v-list-item
+              <versus-opening-compare-item
                 v-for="(o, i) in slice.opponentSide.openingsAsBlack"
                 :key="'ob-' + i + '-' + o.name"
-                :title="o.name"
-              >
-                <template #append>
-                  <opening-stat-append :o="o" />
-                </template>
-              </v-list-item>
+                :o="o"
+              />
               <v-list-item v-if="!slice.opponentSide.openingsAsBlack.length">
                 <v-list-item-title class="text-caption text-medium-emphasis">—</v-list-item-title>
               </v-list-item>
@@ -100,7 +84,7 @@
 import type { VersusSpeedSlice } from '@/entities/versus';
 import { useI18n } from '@/shared/lib/i18n';
 
-import OpeningStatAppend from './OpeningStatAppend.vue';
+import VersusOpeningCompareItem from './VersusOpeningCompareItem.vue';
 
 defineProps<{
   slice: VersusSpeedSlice;

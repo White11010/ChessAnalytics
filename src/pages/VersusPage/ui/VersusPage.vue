@@ -8,16 +8,15 @@
 
         <template v-if="versusStore.result && activeSlice">
           <VersusSpeedFilter />
-          <VersusHeadToHeadCards :slice="activeSlice" :speed-label="speedLabel" />
-          <VersusProfilePentagon :slice="activeSlice" />
           <VersusDiagnosticsAlerts
             :slice="activeSlice"
             :opponent-games-in-api-sample="versusStore.result.opponentGamesInApiSample"
             :speed-label="speedLabel"
           />
+          <VersusHeadToHeadCards :slice="activeSlice" :speed-label="speedLabel" />
+          <VersusProfilePentagon :slice="activeSlice" />
           <VersusMetricsTable :slice="activeSlice" :speed-label="speedLabel" />
           <VersusOpeningsCompare :slice="activeSlice" />
-          <VersusConclusionsBlock :slice="activeSlice" />
           <VersusGamePlanSection :slice="activeSlice" />
         </template>
       </div>
@@ -32,7 +31,6 @@ import { VersusCompareForm } from '@/features/VersusCompareForm';
 import { VersusSpeedFilter } from '@/features/VersusSpeedFilter';
 import { useVersusStore } from '@/entities/versus';
 import { useI18n } from '@/shared/lib/i18n';
-import { VersusConclusionsBlock } from '@/widgets/VersusConclusionsBlock';
 import { VersusDiagnosticsAlerts } from '@/widgets/VersusDiagnosticsAlerts';
 import { VersusEmptyStateHint } from '@/widgets/VersusEmptyStateHint';
 import { VersusGamePlanSection } from '@/widgets/VersusGamePlanSection';
