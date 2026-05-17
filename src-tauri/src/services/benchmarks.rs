@@ -12,10 +12,33 @@ pub struct Pentagon {
     pub endgame: f64,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct PhaseErrorShares {
+    pub opening: i64,
+    pub middlegame: i64,
+    pub endgame: i64,
+}
+
 #[derive(Debug, Deserialize)]
 struct BucketRaw {
     label: String,
     pentagon: Pentagon,
+    #[serde(default = "default_phase_error_opening")]
+    phase_error_share_opening: f64,
+    #[serde(default = "default_phase_error_middlegame")]
+    phase_error_share_middlegame: f64,
+    #[serde(default = "default_phase_error_endgame")]
+    phase_error_share_endgame: f64,
+}
+
+fn default_phase_error_opening() -> f64 {
+    16.0
+}
+fn default_phase_error_middlegame() -> f64 {
+    28.0
+}
+fn default_phase_error_endgame() -> f64 {
+    56.0
 }
 
 #[derive(Debug, Deserialize)]
@@ -85,4 +108,23 @@ pub fn bucket_key_for_rating(rating: i64) -> String {
 pub fn pentagon_and_label(bucket_key: &str) -> Option<(Pentagon, String)> {
     let d = data();
     d.buckets.get(bucket_key).map(|b| (b.pentagon.clone(), b.label.clone()))
+}
+
+/// Population phase error-share norms (percent of key-moment errors) for the player's rating bucket.
+pub fn phase_error_shares_for_rating(rating: i64) -> PhaseErrorShares {
+    let key = bucket_key_for_rating(rating);
+    let d = data();
+    let b = d.buckets.get(&key).or_else(|| d.buckets.values().next());
+    let Some(b) = b else {
+        return PhaseErrorShares {
+            opening: 16,
+            middlegame: 28,
+            endgame: 56,
+        };
+    };
+    PhaseErrorShares {
+        opening: b.phase_error_share_opening.round() as i64,
+        middlegame: b.phase_error_share_middlegame.round() as i64,
+        endgame: b.phase_error_share_endgame.round() as i64,
+    }
 }

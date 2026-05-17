@@ -1,7 +1,7 @@
 import vue from "@vitejs/plugin-vue";
 import path from 'path';
 import ViteFonts from 'unplugin-fonts/vite'
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import vuetify from 'vite-plugin-vuetify'
 
 const host = process.env.TAURI_DEV_HOST;
@@ -52,5 +52,9 @@ export default defineConfig(async () => ({
         alias: {
             '@': path.resolve(__dirname, './src'),
         },
+    },
+    test: {
+        environment: 'node',
+        include: ['src/**/*.test.ts'],
     },
 }));

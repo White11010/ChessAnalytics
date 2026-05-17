@@ -17,6 +17,7 @@ export { MY_GAMES_TABLE_CUSTOM_KEY_SORT } from './lib/myGamesTableSort';
 export {
   filterMyGames,
   normalizePatternTagId,
+  openingValuesForExactNames,
   patternTagOptions,
   uniqueOpeningOptions,
   uniquePatternTags,

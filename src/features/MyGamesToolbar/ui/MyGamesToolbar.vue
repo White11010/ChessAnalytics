@@ -84,7 +84,7 @@
           class="toolbar-field toolbar-field--grow"
         />
         <v-autocomplete
-          v-model="openingValue"
+          v-model="openingValues"
           :items="openingOptions"
           item-title="title"
           item-value="value"
@@ -92,8 +92,12 @@
           density="comfortable"
           variant="outlined"
           hide-details
+          multiple
+          chips
+          closable-chips
           clearable
           class="toolbar-field toolbar-field--grow"
+          @update:model-value="onOpeningValuesChange"
         />
       </div>
 
@@ -132,8 +136,16 @@ const patternSelectItems = computed(() =>
 );
 
 const filtersStore = useMyGamesFiltersStore();
-const { searchText, results, speeds, periods, patternTag, openingValue, playerColors } =
+const { searchText, results, speeds, periods, patternTag, openingValues, playerColors } =
   storeToRefs(filtersStore);
+
+function onOpeningValuesChange(values: string[] | null) {
+  if (!values?.length) {
+    filtersStore.setOpeningFilters([], []);
+  } else {
+    filtersStore.setOpeningFilters(values, []);
+  }
+}
 
 const resultItems = computed(() => [
   { value: 'win' as const, label: t('myGames.toolbar.results.win') },

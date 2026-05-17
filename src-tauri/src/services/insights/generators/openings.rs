@@ -140,6 +140,61 @@ pub(crate) fn opening_trend_insight(user_id: &str, games: &[Game], now_ms_val: i
         62
     };
 
+    let short_recent_start = now_ms_val - 14 * MS_DAY;
+    let short_prev_start = now_ms_val - 28 * MS_DAY;
+    let short_prev_end = short_recent_start;
+    let mut short_recent = OpeningStats::default();
+    let mut short_prev = OpeningStats::default();
+    for g in games {
+        let Some(on) = g.opening_name.as_ref() else {
+            continue;
+        };
+        if on != &name {
+            continue;
+        }
+        let t = g.created_at;
+        let st_ref = if t >= short_recent_start {
+            &mut short_recent
+        } else if t >= short_prev_start && t < short_prev_end {
+            &mut short_prev
+        } else {
+            continue;
+        };
+        st_ref.games += 1;
+        match g.player_result.as_str() {
+            "win" => st_ref.wins += 1,
+            "loss" => st_ref.losses += 1,
+            _ => st_ref.draws += 1,
+        }
+    }
+
+    let mut params = serde_json::Map::new();
+    params.insert("opening".into(), json!(name));
+    params.insert("wr_prev_pct".into(), json!(wr_prev_pct));
+    params.insert("wr_recent_pct".into(), json!(wr_recent_pct));
+    params.insert("n_prev".into(), json!(n_prev));
+    params.insert("n_recent".into(), json!(n_recent));
+    params.insert("delta_pp".into(), json!((delta * 100.0).round()));
+    params.insert("improved".into(), json!(improved));
+
+    if short_prev.games >= 3 && short_recent.games >= 3 {
+        let wr_sp = win_rate(&short_prev);
+        let wr_sr = win_rate(&short_recent);
+        let delta_short = wr_sr - wr_sp;
+        params.insert(
+            "wr_short_prev_pct".into(),
+            json!((wr_sp * 100.0).round() as i64),
+        );
+        params.insert(
+            "wr_short_recent_pct".into(),
+            json!((wr_sr * 100.0).round() as i64),
+        );
+        params.insert("delta_short_pp".into(), json!((delta_short * 100.0).round()));
+        params.insert("improved_short".into(), json!(delta_short > 0.0));
+        params.insert("n_short_prev".into(), json!(short_prev.games));
+        params.insert("n_short_recent".into(), json!(short_recent.games));
+    }
+
     Some(build_insight(
         format!("opening_trend_{user_id}"),
         user_id,
@@ -151,9 +206,9 @@ pub(crate) fn opening_trend_insight(user_id: &str, games: &[Game], now_ms_val: i
         ),
         sev,
         conf,
-        Some("Δ винрейта, п.п.".to_string()),
-        Some(format!("{:+}", (delta * 100.0).round())),
-        Some((delta * 100.0).round()),
+        None,
+        None,
+        None,
         Some(if improved {
             "Закрепляй то, что изменилось в подготовке.".to_string()
         } else {
@@ -161,15 +216,7 @@ pub(crate) fn opening_trend_insight(user_id: &str, games: &[Game], now_ms_val: i
         }),
         &format!("opening_trend:{name}"),
         84,
-        json!({
-            "opening": name,
-            "wr_prev_pct": wr_prev_pct,
-            "wr_recent_pct": wr_recent_pct,
-            "n_prev": n_prev,
-            "n_recent": n_recent,
-            "delta_pp": (delta * 100.0).round(),
-            "improved": improved
-        }),
+        serde_json::Value::Object(params),
     ))
 }
 

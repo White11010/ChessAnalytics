@@ -19,8 +19,10 @@ export {
 export {
   formatInsightMetricPrimaryValue,
   insightMetricBlockVisible,
+  insightMetricHeadline,
   insightMetricSecondaryLabel,
 } from './lib/insightMetricLine';
+export { insightShowsHeadlineMetric, insightSummaryUsesPreLine } from './lib/insightMetricPresentation';
 export { findRatingGrowth30dInsight } from './lib/insightRatingGrowthKpi';
 export {
   insightSeverityToSemanticColor,

@@ -57,9 +57,10 @@ export interface MyGamesFiltersSnapshot {
   speeds: string[];
   periods: MyGamesPeriod[];
   patternTag: string | null;
-  openingValue: string | null;
+  /** Selected `eco|name` keys from the opening autocomplete. */
+  openingValues: string[];
   /** Exact Lichess `opening_name` (insight navigation); excludes longer-name supersets from substring search. */
-  openingNameExact: string | null;
+  openingNamesExact: string[];
   /** Empty = all colors; matches `Game.player_color`. */
   playerColors: MyGamesPlayerColor[];
   sortBy: MyGamesTableSortItem[];
@@ -72,11 +73,37 @@ function defaultSnapshot(): MyGamesFiltersSnapshot {
     speeds: [],
     periods: [],
     patternTag: null,
-    openingValue: null,
-    openingNameExact: null,
+    openingValues: [],
+    openingNamesExact: [],
     playerColors: [],
     sortBy: [...DEFAULT_SORT_BY],
   };
+}
+
+function migrateOpeningFields(parsed: Record<string, unknown>): Pick<
+  MyGamesFiltersSnapshot,
+  'openingValues' | 'openingNamesExact'
+> {
+  const legacyValue = parsed.openingValue;
+  const legacyExact = parsed.openingNameExact;
+  const valuesFromParsed = parsed.openingValues;
+  const namesFromParsed = parsed.openingNamesExact;
+
+  let openingValues: string[] = [];
+  if (Array.isArray(valuesFromParsed)) {
+    openingValues = valuesFromParsed.filter((v): v is string => typeof v === 'string' && v !== '');
+  } else if (typeof legacyValue === 'string' && legacyValue) {
+    openingValues = [legacyValue];
+  }
+
+  let openingNamesExact: string[] = [];
+  if (Array.isArray(namesFromParsed)) {
+    openingNamesExact = namesFromParsed.filter((v): v is string => typeof v === 'string' && v !== '');
+  } else if (typeof legacyExact === 'string' && legacyExact) {
+    openingNamesExact = [legacyExact];
+  }
+
+  return { openingValues, openingNamesExact };
 }
 
 function loadSnapshot(): MyGamesFiltersSnapshot {
@@ -90,7 +117,15 @@ function loadSnapshot(): MyGamesFiltersSnapshot {
       sortBy?: unknown;
     };
     const base = defaultSnapshot();
-    const { sortPreset, sortBy: rawSortBy, ...rest } = parsed;
+    const {
+      sortPreset,
+      sortBy: rawSortBy,
+      openingValue: _ov,
+      openingNameExact: _one,
+      openingValues: _ovs,
+      openingNamesExact: _ones,
+      ...rest
+    } = parsed;
 
     let sortBy = base.sortBy;
     if (Array.isArray(rawSortBy) && rawSortBy.length && (rawSortBy[0] as { key?: string })?.key) {
@@ -99,7 +134,9 @@ function loadSnapshot(): MyGamesFiltersSnapshot {
       sortBy = sortPresetToSortBy(sortPreset);
     }
 
-    return { ...base, ...rest, sortBy } as MyGamesFiltersSnapshot;
+    const openingFields = migrateOpeningFields(parsed);
+
+    return { ...base, ...rest, ...openingFields, sortBy } as MyGamesFiltersSnapshot;
   } catch {
     return defaultSnapshot();
   }
@@ -121,8 +158,8 @@ export const useMyGamesFiltersStore = defineStore('myGamesFilters', {
         speeds: this.speeds,
         periods: this.periods,
         patternTag: this.patternTag,
-        openingValue: this.openingValue,
-        openingNameExact: this.openingNameExact,
+        openingValues: [...this.openingValues],
+        openingNamesExact: [...this.openingNamesExact],
         playerColors: [...this.playerColors],
         sortBy: [...this.sortBy],
       });
@@ -131,6 +168,11 @@ export const useMyGamesFiltersStore = defineStore('myGamesFilters', {
     reset() {
       Object.assign(this, defaultSnapshot());
       this.persist();
+    },
+
+    setOpeningFilters(values: string[], namesExact: string[]) {
+      this.openingValues = [...values];
+      this.openingNamesExact = [...namesExact];
     },
   },
 });

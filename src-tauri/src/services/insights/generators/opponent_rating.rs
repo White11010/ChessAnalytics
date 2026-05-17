@@ -77,9 +77,9 @@ pub fn generate(user_id: &str, games: &[Game]) -> Vec<Insight> {
         ),
         if gap_r >= 25 { "warning" } else { "info" },
         80,
-        Some("Винрейт vs сильнее".to_string()),
-        Some(format!("{p_s}%")),
-        Some(p_s as f64),
+        None,
+        None,
+        None,
         Some("Добавь игру против чуть более сильных и разбор ключевых партий.".to_string()),
         "tactics:opponent_rating_buckets",
         73,
@@ -90,7 +90,8 @@ pub fn generate(user_id: &str, games: &[Game]) -> Vec<Insight> {
             "n_weaker": weaker.games,
             "n_equal": equal.games,
             "n_stronger": stronger.games,
-            "gap_equal_vs_stronger_pp": gap_r
+            "gap_equal_vs_stronger_pp": gap_r,
+            "rating_band": 50
         }),
     )]
 }

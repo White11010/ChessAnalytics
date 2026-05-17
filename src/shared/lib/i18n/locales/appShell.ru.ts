@@ -229,15 +229,12 @@ export const appShellRu = {
       ratingDelta: 'Изменение рейтинга',
       winrateBestSlot: 'Винрейт (лучший слот)',
       shareOfGames: 'Доля партий',
-      winrateGapPp: 'Разница винрейта, п.п.',
-      endgameErrorShare: 'Доля ошибок в эндшпиле',
+      winrateGap: 'Разница винрейта',
       gamesInRow: 'Партий подряд',
-      failedToWinPct: 'Не победили, %',
+      missedWins: 'Упущенные победы',
       streakLength: 'Длина серии',
-      trendDeltaPp: 'Изменение винрейта, п.п.',
       weakestPhaseAccuracy: 'Точность (слабая фаза)',
-      accuracyDropPp: 'Просадка точности, п.п.',
-      winrateVsStronger: 'Винрейт против сильнее',
+      accuracyDrop: 'Просадка точности',
       winrateLightDays: 'Винрейт в «лёгкие» дни',
     },
     slots: {
@@ -278,13 +275,22 @@ export const appShellRu = {
       opening_color_split: {
         title: 'Дебют по цвету',
         summary:
-          '{opening}: {stronger_wr_pct}% за {stronger_side} ({n_stronger} партий) против {weaker_wr_pct}% за {weaker_side} ({n_weaker} партий), разница {gap_pp} п.п.',
+          '{opening}: {stronger_wr_pct}% за {stronger_side} ({n_stronger} партий) против {weaker_wr_pct}% за {weaker_side} ({n_weaker} партий) — на {gap_pp}% выше на сильной стороне.',
         recommendation: 'Разведите подготовку по цветам — структуры различаются.',
       },
       opening_trend: {
         title: 'Динамика дебюта (30 дней)',
         summary:
           '{opening}: винрейт {wr_prev_pct}% → {wr_recent_pct}% (пред. 30 дн.: {n_prev} партий, последние 30 дн.: {n_recent} партий).',
+        summaryImproved:
+          '{opening}: ↑ {wr_prev_pct}% → {wr_recent_pct}% за 30 дней ({n_prev} → {n_recent} партий).',
+        summaryDeclined:
+          '{opening}: ↓ {wr_prev_pct}% → {wr_recent_pct}% за 30 дней ({n_prev} → {n_recent} партий).',
+        shortTermImproved:
+          '+{delta_short_abs}% за последние 2 недели — укрепляется.',
+        shortTermDeclined:
+          '−{delta_short_abs}% за последние 2 недели — ослабевает.',
+        shortTermFlat: 'За последние 2 недели — без заметных изменений.',
         recommendation: 'Закрепите то, что изменилось, или разберите просадку.',
       },
       time_control_best: {
@@ -305,16 +311,16 @@ export const appShellRu = {
       time_morning_vs_evening: {
         title: 'Время суток',
         summaryMorningBetter:
-          '{better}: {pct_b}% ({n_b} игр) vs {worse}: {pct_w}% ({n_w} игр), разница {gap_pp} п.п. {timezone_caption}',
+          '{better}: {pct_b}% ({n_b} игр) vs {worse}: {pct_w}% ({n_w} игр) — на {gap_pp}% выше. {timezone_caption}',
         summaryEveningBetter:
-          '{better}: {pct_b}% ({n_b} игр) vs {worse}: {pct_w}% ({n_w} игр), разница {gap_pp} п.п. {timezone_caption}',
+          '{better}: {pct_b}% ({n_b} игр) vs {worse}: {pct_w}% ({n_w} игр) — на {gap_pp}% выше. {timezone_caption}',
         timezoneCaption: '(Время: локальная таймзона устройства, {tz})',
         recommendation: 'Учитывайте усталость и концентрацию при планировании партий.',
       },
       time_games_per_day_pattern: {
         title: 'Партий в день',
         summary:
-          '«Лёгкие» дни (1–4 партии): винрейт {wr_light_pct}% ({light_days} дней, {light_games} партий). Дни с 10+ партиями: {wr_heavy_pct}% ({heavy_days} дней, {heavy_games} партий), разница {gap_pp} п.п.',
+          '«Лёгкие» дни (1–4 партии): винрейт {wr_light_pct}% ({light_days} дней, {light_games} партий). Дни с 10+ партиями: {wr_heavy_pct}% ({heavy_days} дней, {heavy_games} партий) — на {gap_pp}% ниже в «тяжёлые» дни.',
         recommendation: 'Сокращайте марафонские дни или делайте длинные паузы между сессиями.',
       },
       tactics_late_game_losses: {
@@ -334,6 +340,8 @@ export const appShellRu = {
         title: 'Миттельшпиль vs эндшпиль',
         summary:
           'Ошибки в ключевых моментах: миттельшпиль (≤50 полуходов) {mg_err}, эндшпиль (>50) {eg_err} из {total_err} на {n_games} партий с анализом. Доля эндшпиля: {eg_share}%.',
+        summaryWithBenchmark:
+          '{middlegame_share}% ошибок в ключевых моментах в миттельшпиле\n(против {endgame_share}% в эндшпиле, против {opening_share}% в дебюте)\n\nБенчмарк для вашего рейтинга: миттельшпиль {bench_middlegame_pct}%, эндшпиль {bench_endgame_pct}%',
         recommendation: 'Добавьте эндшпильные задачи, если хвост партии проседает.',
       },
       tactics_conversion_advantage: {
@@ -353,7 +361,7 @@ export const appShellRu = {
       psychology_tilt: {
         title: 'Tilt-детектор',
         summary:
-          'После двух поражений подряд винрейт на 3-й и 4-й следующей партии: {pct}% ({tilt_wins}/{tilt_n}).',
+          'После 2 поражений подряд в 3-й партии выигрываешь {pct}% ({tilt_wins}/{tilt_n}).',
         recommendation: 'Сделайте паузу или разминку после серии поражений.',
       },
       psychology_comeback: {
@@ -365,13 +373,13 @@ export const appShellRu = {
       psychology_rest_effect: {
         title: 'Усталость в сессии',
         summary:
-          'Средняя точность по анализу: первая партия дня {mean_first_pct}% ({n_first_samples} выборок), с 5-й и далее в тот же день {mean_fifth_plus_pct}% ({n_late_samples} выборок), разница {drop_pp} п.п.',
+          'Средняя точность по анализу: первая партия дня {mean_first_pct}% ({n_first_samples} выборок), с 5-й и далее в тот же день {mean_fifth_plus_pct}% ({n_late_samples} выборок) — на {drop_pp}% ниже к концу сессии.',
         recommendation: 'Остановитесь после нескольких партий или сделайте длинный перерыв.',
       },
       opponent_rating_performance: {
         title: 'Игра по силе соперника',
         summary:
-          'Винрейт: против слабее (−50 и ниже) {wr_weaker_pct}% ({n_weaker} партий), в паритет ±50 — {wr_equal_pct}% ({n_equal} партий), против сильнее (+50) {wr_stronger_pct}% ({n_stronger} партий). Просадка к «сильным»: {gap_equal_vs_stronger_pp} п.п.',
+          'Против более слабых (вы выше рейтингом более чем на {rating_band})\n{wr_weaker_pct}% ({n_weaker} партий)\n\nПротив равных по силе (±{rating_band} рейтинга)\n{wr_equal_pct}% ({n_equal} партий)\n\nПротив более сильных (соперник выше на {rating_band}+)\n{wr_stronger_pct}% ({n_stronger} партий)',
         recommendation: 'Добавьте игру против чуть более сильных и разбор ключевых партий.',
       },
     },

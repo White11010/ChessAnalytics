@@ -1,23 +1,22 @@
 <template>
   <div class="d-flex flex-column ga-4 w-100 min-w-0">
     <InsightsFilters />
-    <InsightsHero
-      v-if="heroInsight && heroVisible"
-      :insight="heroInsight"
+    <InsightsFeed
+      :insights="displayInsights"
+      :featured-id="featuredId"
       @view-games="goToMyGamesFromInsight"
     />
-    <InsightsFeed :insights="feedInsights" @view-games="goToMyGamesFromInsight" />
   </div>
 </template>
 
 <script setup lang="ts">
-// Composes filters, featured hero, and the insights feed for the openings insights feature.
+// Composes filters and the unified insights grid (featured card first when present).
 
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { useMyGamesFiltersStore } from '@/entities/game';
+import { openingValuesForExactNames, useGamesStore, useMyGamesFiltersStore } from '@/entities/game';
 import {
   buildMyGamesFiltersFromInsight,
   useInsightsFiltersStore,
@@ -27,10 +26,10 @@ import type { Insight } from '@/entities/insight';
 
 import InsightsFeed from './InsightsFeed.vue';
 import InsightsFilters from './InsightsFilters.vue';
-import InsightsHero from './InsightsHero.vue';
 
 const router = useRouter();
 const insightsStore = useInsightsStore();
+const gamesStore = useGamesStore();
 const filtersStore = useMyGamesFiltersStore();
 const insightsFiltersStore = useInsightsFiltersStore();
 const { heroInsight } = storeToRefs(insightsStore);
@@ -39,6 +38,9 @@ const { selectedFilter, sortOrder } = storeToRefs(insightsFiltersStore);
 function goToMyGamesFromInsight(insight: Insight): void {
   filtersStore.reset();
   const patch = buildMyGamesFiltersFromInsight(insight);
+  if (patch.openingNamesExact.length) {
+    patch.openingValues = openingValuesForExactNames(gamesStore.games, patch.openingNamesExact);
+  }
   filtersStore.$patch(patch);
   filtersStore.persist();
   void router.push({ name: 'MyGames' });
@@ -68,8 +70,18 @@ const heroVisible = computed(() => {
   return categoryFiltered.value.some((i) => i.id === heroInsight.value!.id);
 });
 
-const feedInsights = computed(() => {
-  const heroId = heroVisible.value && heroInsight.value ? heroInsight.value.id : null;
-  return categoryFiltered.value.filter((i) => i.id !== heroId);
+const featuredId = computed(() =>
+  heroVisible.value && heroInsight.value ? heroInsight.value.id : null,
+);
+
+const displayInsights = computed(() => {
+  const heroId = featuredId.value;
+  const rest = heroId
+    ? categoryFiltered.value.filter((i) => i.id !== heroId)
+    : categoryFiltered.value;
+  if (heroId && heroInsight.value) {
+    return [heroInsight.value, ...rest];
+  }
+  return rest;
 });
 </script>

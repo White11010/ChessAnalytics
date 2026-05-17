@@ -140,12 +140,11 @@ pub fn generate(
             continue;
         }
         if is_loss(ch[i - 2]) && is_loss(ch[i - 1]) {
-            for j in [i + 2, i + 3] {
-                if j < ch.len() {
-                    tilt_n += 1;
-                    if is_win(ch[j]) {
-                        tilt_wins += 1;
-                    }
+            let j = i + 2;
+            if j < ch.len() {
+                tilt_n += 1;
+                if is_win(ch[j]) {
+                    tilt_wins += 1;
                 }
             }
         }
@@ -160,7 +159,7 @@ pub fn generate(
             CAT_PSYCHOLOGY,
             "Tilt-детектор".to_string(),
             format!(
-                "После двух поражений подряд винрейт на 3-й и 4-й следующей партии: {pct}% ({tilt_wins}/{tilt_n})."
+                "После двух поражений подряд винрейт в 3-й следующей партии: {pct}% ({tilt_wins}/{tilt_n})."
             ),
             if wr < 0.42 { "warning" } else { "info" },
             72,

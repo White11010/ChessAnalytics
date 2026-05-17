@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+description: git operations in agent mode
+---
+
+Never do git commit and add commands. Never do push commands. In the end of every task whrite message for commit in chat

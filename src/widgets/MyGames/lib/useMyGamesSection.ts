@@ -33,8 +33,8 @@ export function useMyGamesSection() {
       speeds: filtersStore.speeds,
       periods: filtersStore.periods,
       patternTag: filtersStore.patternTag,
-      openingValue: filtersStore.openingValue,
-      openingNameExact: filtersStore.openingNameExact,
+      openingValues: filtersStore.openingValues,
+      openingNamesExact: filtersStore.openingNamesExact,
       playerColors: filtersStore.playerColors,
     });
     return filtered;
@@ -52,8 +52,8 @@ export function useMyGamesSection() {
       filtersStore.speeds.length > 0 ||
       filtersStore.periods.length > 0 ||
       filtersStore.patternTag != null ||
-      filtersStore.openingValue != null ||
-      filtersStore.openingNameExact != null ||
+      filtersStore.openingValues.length > 0 ||
+      filtersStore.openingNamesExact.length > 0 ||
       filtersStore.playerColors.length > 0;
     return hasSearch || hasChipFilters || filteredLen !== total;
   });

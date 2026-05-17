@@ -6,6 +6,7 @@ use serde_json::json;
 use crate::db::game_analyses::model::{GameAnalysisRow, KeyMomentRow};
 use crate::db::games::model::Game;
 use crate::db::insights::model::Insight;
+use crate::services::benchmarks;
 use crate::services::insights::insight_common::{build_insight, CAT_TACTICS};
 
 fn is_error_kind(k: &str) -> bool {
@@ -21,10 +22,12 @@ pub fn generate(
 ) -> Vec<Insight> {
     let mut out = Vec::new();
 
-    // Ply 50 split is a cheap phase proxy vs running FEN-based phase detection on every historical game.
+    // Three ply bands align with accuracy-by-phase insight copy (opening / middlegame / endgame).
+    let mut op_err = 0i64;
     let mut mg_err = 0i64;
     let mut eg_err = 0i64;
     let mut games_with_moments: HashSet<String> = HashSet::new();
+    let mut ratings: Vec<i64> = Vec::new();
     for m in moments {
         if !is_error_kind(&m.kind) {
             continue;
@@ -36,18 +39,36 @@ pub fn generate(
             continue;
         }
         games_with_moments.insert(m.game_id.clone());
-        if m.ply <= 50 {
+        if m.ply <= 20 {
+            op_err += 1;
+        } else if m.ply <= 50 {
             mg_err += 1;
         } else {
             eg_err += 1;
         }
     }
-    let total_err = mg_err + eg_err;
+    for g in games {
+        if games_with_moments.contains(&g.id) {
+            if let Some(r) = g.player_rating {
+                ratings.push(r);
+            }
+        }
+    }
+    let total_err = op_err + mg_err + eg_err;
     let n_games = games_with_moments.len() as i64;
     if total_err >= 15 && n_games >= 8 {
-        let eg_share = (eg_err as f64 / total_err as f64) * 100.0;
-        let mg_share = 100.0 - eg_share;
-        let eg_share_r = eg_share.round();
+        let op_share_r = (op_err as f64 / total_err as f64 * 100.0).round();
+        let mg_share_r = (mg_err as f64 / total_err as f64 * 100.0).round();
+        let eg_share_r = (eg_err as f64 / total_err as f64 * 100.0).round();
+        let median_rating = {
+            ratings.sort_unstable();
+            if ratings.is_empty() {
+                1500
+            } else {
+                ratings[ratings.len() / 2]
+            }
+        };
+        let bench = benchmarks::phase_error_shares_for_rating(median_rating);
         out.push(build_insight(
             format!("tactics_phase_{user_id}"),
             user_id,
@@ -55,25 +76,30 @@ pub fn generate(
             CAT_TACTICS,
             "Миттельшпиль vs эндшпиль".to_string(),
             format!(
-                "Ошибки (блиц/неточности) в ключевых моментах: миттельшпиль (≤50 полуходов) {mg_err}, эндшпиль (>50) {eg_err} из {total_err} на {n_games} партий с анализом. Доля эндшпиля: {eg_share_r}%."
+                "Доля ошибок: дебют {op_share_r}%, миттельшпиль {mg_share_r}%, эндшпиль {eg_share_r}% ({n_games} партий с анализом)."
             ),
-            if eg_share > 52.0 { "warning" } else { "info" },
+            if eg_share_r > 52.0 { "warning" } else { "info" },
             78,
-            Some("Доля ошибок в эндшпиле".to_string()),
-            Some(format!("{eg_share_r}%")),
-            Some(eg_share_r),
+            None,
+            None,
+            None,
             Some("Добавь эндшпильные задачи, если хвост партии проседает.".to_string()),
             "tactics:phase_error_split",
             76,
             json!({
+                "op_err": op_err,
                 "mg_err": mg_err,
                 "eg_err": eg_err,
                 "total_err": total_err,
                 "n_games": n_games,
-                "eg_share": eg_share_r
+                "opening_share": op_share_r,
+                "middlegame_share": mg_share_r,
+                "endgame_share": eg_share_r,
+                "bench_opening_pct": bench.opening,
+                "bench_middlegame_pct": bench.middlegame,
+                "bench_endgame_pct": bench.endgame
             }),
         ));
-        let _ = mg_share;
     }
 
     // Failed conversion: had >= +2.0 advantage, did not win — with time-control breakdown
@@ -144,7 +170,7 @@ pub fn generate(
             ),
             if rate > 35.0 { "warning" } else { "info" },
             82,
-            Some("Не победили, %".to_string()),
+            Some("Упущенные победы".to_string()),
             Some(format!("{rate_r}%")),
             Some(rate_r),
             Some("Потренируй техническую реализацию и контроль времени.".to_string()),

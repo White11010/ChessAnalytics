@@ -1,4 +1,5 @@
 import type { MyGamesFiltersSnapshot } from '@/entities/game/model/myGamesFilters.store';
+import type { MyGamesPlayerColor } from '@/entities/game/model/games.types';
 import { MY_GAMES_LONG_LOSS_FILTER_TAG } from '@/shared/lib/patternTags';
 
 import type { Insight } from '../model/insight.types';
@@ -11,8 +12,8 @@ export type InsightMyGamesFilterPatch = Pick<
   | 'speeds'
   | 'periods'
   | 'patternTag'
-  | 'openingValue'
-  | 'openingNameExact'
+  | 'openingValues'
+  | 'openingNamesExact'
   | 'playerColors'
 >;
 
@@ -23,10 +24,17 @@ function emptyPatch(): InsightMyGamesFilterPatch {
     speeds: [],
     periods: [],
     patternTag: null,
-    openingValue: null,
-    openingNameExact: null,
+    openingValues: [],
+    openingNamesExact: [],
     playerColors: [],
   };
+}
+
+function playerColorFromParam(raw: unknown): MyGamesPlayerColor | null {
+  if (raw === 'white' || raw === 'black') {
+    return raw;
+  }
+  return null;
 }
 
 export function canNavigateInsightToMyGames(insight: Insight): boolean {
@@ -73,7 +81,17 @@ export function buildMyGamesFiltersFromInsight(insight: Insight): InsightMyGames
       return emptyPatch();
     }
     // Insights aggregate by exact `opening_name` in Rust; match that here (substring search would include longer Lichess names).
-    return { ...emptyPatch(), openingNameExact: openingName.trim() };
+    const patch: InsightMyGamesFilterPatch = {
+      ...emptyPatch(),
+      openingNamesExact: [openingName.trim()],
+    };
+    if (k === 'opening_color_split') {
+      const color = playerColorFromParam(params.stronger_color);
+      if (color) {
+        patch.playerColors = [color];
+      }
+    }
+    return patch;
   }
 
   if (k === 'time_control_best' || k === 'time_control_worst' || k === 'time_rating_growth_30d') {

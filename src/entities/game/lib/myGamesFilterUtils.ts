@@ -88,6 +88,21 @@ function openingKey(game: Game): string {
 /** Same threshold as `tactics_late_game_losses` / `move_count::total_halfmoves` on the backend. */
 const LONG_LOSS_MIN_HALFMOVES = 40;
 
+export function openingValuesForExactNames(games: Game[], names: string[]): string[] {
+  const want = new Set(names.map((n) => n.trim()).filter(Boolean));
+  if (!want.size) {
+    return [];
+  }
+  const values = new Set<string>();
+  for (const g of games) {
+    const name = (g.opening_name ?? '').trim();
+    if (want.has(name)) {
+      values.add(openingKey(g));
+    }
+  }
+  return [...values].sort((a, b) => a.localeCompare(b));
+}
+
 export function filterMyGames(
   games: Game[],
   opts: {
@@ -96,14 +111,15 @@ export function filterMyGames(
     speeds: string[];
     periods: MyGamesPeriod[];
     patternTag: string | null;
-    openingValue: string | null;
-    openingNameExact: string | null;
+    openingValues: string[];
+    openingNamesExact: string[];
     playerColors: MyGamesPlayerColor[];
   },
 ): Game[] {
   const q = opts.searchText.trim().toLowerCase();
   const cutoff = periodCutoffMs(opts.periods);
-  const openingExact = opts.openingNameExact?.trim() ?? '';
+  const namesExact = opts.openingNamesExact.map((n) => n.trim()).filter(Boolean);
+  const openingValues = opts.openingValues.filter(Boolean);
 
   return games.filter((g) => {
     if (cutoff !== null && g.created_at < cutoff) {
@@ -128,11 +144,11 @@ export function filterMyGames(
         }
       }
     }
-    if (openingExact !== '') {
-      if ((g.opening_name ?? '').trim() !== openingExact) {
+    if (namesExact.length) {
+      if (!namesExact.includes((g.opening_name ?? '').trim())) {
         return false;
       }
-    } else if (opts.openingValue && openingKey(g) !== opts.openingValue) {
+    } else if (openingValues.length && !openingValues.includes(openingKey(g))) {
       return false;
     }
     if (opts.playerColors.length && !opts.playerColors.includes(g.player_color)) {

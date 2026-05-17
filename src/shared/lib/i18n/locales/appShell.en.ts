@@ -2,7 +2,7 @@
 export const appShellEn = {
   layout: {
     brandTitle: 'Blindspot',
-    brandSubtitle: 'Chess Patterns',
+    brandSubtitle: 'Your Chess Patterns',
     navHome: 'Home',
     navInsights: 'Insights',
     navMyGames: 'My games',
@@ -228,15 +228,12 @@ export const appShellEn = {
       ratingDelta: 'Rating change',
       winrateBestSlot: 'Win rate (best slot)',
       shareOfGames: 'Share of games',
-      winrateGapPp: 'Win rate gap (p.p.)',
-      endgameErrorShare: 'Endgame error share',
+      winrateGap: 'Win rate gap',
       gamesInRow: 'Games in a row',
-      failedToWinPct: 'Did not win, %',
+      missedWins: 'Missed wins',
       streakLength: 'Streak length',
-      trendDeltaPp: 'Win rate change (p.p.)',
       weakestPhaseAccuracy: 'Accuracy (weakest phase)',
-      accuracyDropPp: 'Accuracy drop (p.p.)',
-      winrateVsStronger: 'Win rate vs stronger',
+      accuracyDrop: 'Accuracy drop',
       winrateLightDays: 'Win rate (light days)',
     },
     slots: {
@@ -278,13 +275,20 @@ export const appShellEn = {
       opening_color_split: {
         title: 'Opening by color',
         summary:
-          '{opening}: {stronger_wr_pct}% as {stronger_side} ({n_stronger} games) vs {weaker_wr_pct}% as {weaker_side} ({n_weaker} games), gap {gap_pp} p.p.',
+          '{opening}: {stronger_wr_pct}% as {stronger_side} ({n_stronger} games) vs {weaker_wr_pct}% as {weaker_side} ({n_weaker} games) — {gap_pp}% higher on the stronger side.',
         recommendation: 'Split prep by color — structures differ.',
       },
       opening_trend: {
         title: 'Opening trend (30 days)',
         summary:
           '{opening}: win rate {wr_prev_pct}% → {wr_recent_pct}% (previous 30 days: {n_prev} games, last 30 days: {n_recent} games).',
+        summaryImproved:
+          '{opening}: ↑ {wr_prev_pct}% → {wr_recent_pct}% over 30 days ({n_prev} → {n_recent} games).',
+        summaryDeclined:
+          '{opening}: ↓ {wr_prev_pct}% → {wr_recent_pct}% over 30 days ({n_prev} → {n_recent} games).',
+        shortTermImproved: '+{delta_short_abs}% over the last 2 weeks — still improving.',
+        shortTermDeclined: '−{delta_short_abs}% over the last 2 weeks — weakening.',
+        shortTermFlat: 'Last 2 weeks: roughly flat.',
         recommendation: 'Double down on what changed, or review if it dropped.',
       },
       time_control_best: {
@@ -305,16 +309,16 @@ export const appShellEn = {
       time_morning_vs_evening: {
         title: 'Time of day',
         summaryMorningBetter:
-          '{better}: {pct_b}% ({n_b} games) vs {worse}: {pct_w}% ({n_w} games), gap {gap_pp} p.p. {timezone_caption}',
+          '{better}: {pct_b}% ({n_b} games) vs {worse}: {pct_w}% ({n_w} games) — {gap_pp}% higher. {timezone_caption}',
         summaryEveningBetter:
-          '{better}: {pct_b}% ({n_b} games) vs {worse}: {pct_w}% ({n_w} games), gap {gap_pp} p.p. {timezone_caption}',
+          '{better}: {pct_b}% ({n_b} games) vs {worse}: {pct_w}% ({n_w} games) — {gap_pp}% higher. {timezone_caption}',
         timezoneCaption: '(Clock: device local, {tz})',
         recommendation: 'Plan sessions around fatigue and focus.',
       },
       time_games_per_day_pattern: {
         title: 'Games per day',
         summary:
-          'Light days (1–4 games): {wr_light_pct}% win rate ({light_days} days, {light_games} games). Heavy days (10+ games): {wr_heavy_pct}% ({heavy_days} days, {heavy_games} games), gap {gap_pp} p.p.',
+          'Light days (1–4 games): {wr_light_pct}% win rate ({light_days} days, {light_games} games). Heavy days (10+ games): {wr_heavy_pct}% ({heavy_days} days, {heavy_games} games) — {gap_pp}% lower on heavy days.',
         recommendation: 'Avoid marathon days or insert longer breaks between sessions.',
       },
       tactics_late_game_losses: {
@@ -334,6 +338,8 @@ export const appShellEn = {
         title: 'Middlegame vs endgame',
         summary:
           'Key-moment errors: middlegame (≤50 half-moves) {mg_err}, endgame (>50) {eg_err} of {total_err} across {n_games} analyzed games. Endgame share: {eg_share}%.',
+        summaryWithBenchmark:
+          '{middlegame_share}% of key-moment errors in the middlegame\n(vs {endgame_share}% in the endgame, vs {opening_share}% in the opening)\n\nBenchmark for your rating: middlegame {bench_middlegame_pct}%, endgame {bench_endgame_pct}%',
         recommendation: 'Add endgame puzzles if the late phase drags you down.',
       },
       tactics_conversion_advantage: {
@@ -353,7 +359,7 @@ export const appShellEn = {
       psychology_tilt: {
         title: 'Tilt detector',
         summary:
-          'After two losses in a row, win rate on the 3rd and 4th next games: {pct}% ({tilt_wins}/{tilt_n}).',
+          'After two losses in a row, you win {pct}% of your 3rd next game ({tilt_wins}/{tilt_n}).',
         recommendation: 'Take a short break or warm up after losing streaks.',
       },
       psychology_comeback: {
@@ -365,13 +371,13 @@ export const appShellEn = {
       psychology_rest_effect: {
         title: 'Session fatigue',
         summary:
-          'Mean analysis accuracy: first game of the day {mean_first_pct}% ({n_first_samples} samples) vs 5th+ that day {mean_fifth_plus_pct}% ({n_late_samples} samples), drop {drop_pp} p.p.',
+          'Mean analysis accuracy: first game of the day {mean_first_pct}% ({n_first_samples} samples) vs 5th+ that day {mean_fifth_plus_pct}% ({n_late_samples} samples) — {drop_pp}% lower later in the session.',
         recommendation: 'Stop after a few games or take a long break before continuing.',
       },
       opponent_rating_performance: {
         title: 'Performance by opponent strength',
         summary:
-          'Win rate vs weaker (−50 and below): {wr_weaker_pct}% ({n_weaker} games), even (±50): {wr_equal_pct}% ({n_equal} games), stronger (+50): {wr_stronger_pct}% ({n_stronger} games). Gap even vs stronger: {gap_equal_vs_stronger_pp} p.p.',
+          'vs Weaker opponents (you are {rating_band}+ rating points higher)\n{wr_weaker_pct}% ({n_weaker} games)\n\nvs Equal strength (±{rating_band} rating)\n{wr_equal_pct}% ({n_equal} games)\n\nvs Stronger opponents (opponent {rating_band}+ higher)\n{wr_stronger_pct}% ({n_stronger} games)',
         recommendation: 'Play slightly stronger opponents and review those games.',
       },
     },

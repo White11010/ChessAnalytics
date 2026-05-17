@@ -38,6 +38,47 @@ function kindKey(kind: string, part: 'title' | 'summary' | 'recommendation'): st
   return `insights.kinds.${kind}.${part}`;
 }
 
+function numParam(p: Record<string, string | number | boolean>, k: string): number | null {
+  const v = p[k];
+  if (typeof v === 'number' && Number.isFinite(v)) {
+    return v;
+  }
+  if (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v))) {
+    return Number(v);
+  }
+  return null;
+}
+
+function formatOpeningTrendSummary(
+  p: Record<string, string | number | boolean>,
+  t: TFn,
+  te: TeFn,
+): string {
+  const improved = bool(p, 'improved');
+  const mainKey = improved
+    ? 'insights.kinds.opening_trend.summaryImproved'
+    : 'insights.kinds.opening_trend.summaryDeclined';
+  const fallbackKey = 'insights.kinds.opening_trend.summary';
+  const main = te(mainKey) ? t(mainKey, p) : te(fallbackKey) ? t(fallbackKey, p) : '';
+
+  const deltaShort = numParam(p, 'delta_short_pp');
+  if (deltaShort == null) {
+    return main;
+  }
+  p.delta_short_abs = Math.abs(Math.round(deltaShort));
+  if (Math.abs(deltaShort) < 3 && te('insights.kinds.opening_trend.shortTermFlat')) {
+    return `${main}\n${t('insights.kinds.opening_trend.shortTermFlat', p)}`;
+  }
+  const shortImproved = bool(p, 'improved_short');
+  const shortKey = shortImproved
+    ? 'insights.kinds.opening_trend.shortTermImproved'
+    : 'insights.kinds.opening_trend.shortTermDeclined';
+  if (te(shortKey)) {
+    return `${main}\n${t(shortKey, p)}`;
+  }
+  return main;
+}
+
 export function getInsightTitle(insight: Insight, t: TFn, te: TeFn): string {
   const p = baseParams(insight, t);
   const k = insight.kind;
@@ -120,8 +161,25 @@ export function getInsightSummary(insight: Insight, t: TFn, te: TeFn): string {
     }
   }
   if (k === 'opening_trend') {
-    if (te('insights.kinds.opening_trend.summary')) {
-      return t('insights.kinds.opening_trend.summary', p);
+    return formatOpeningTrendSummary(p, t, te);
+  }
+  if (k === 'opponent_rating_performance') {
+    if (p.rating_band == null) {
+      p.rating_band = 50;
+    }
+    if (te('insights.kinds.opponent_rating_performance.summary')) {
+      return t('insights.kinds.opponent_rating_performance.summary', p);
+    }
+  }
+  if (k === 'tactics_middlegame_vs_endgame') {
+    if (
+      typeof p.middlegame_share === 'number' &&
+      te('insights.kinds.tactics_middlegame_vs_endgame.summaryWithBenchmark')
+    ) {
+      return t('insights.kinds.tactics_middlegame_vs_endgame.summaryWithBenchmark', p);
+    }
+    if (te('insights.kinds.tactics_middlegame_vs_endgame.summary')) {
+      return t('insights.kinds.tactics_middlegame_vs_endgame.summary', p);
     }
   }
   const key = kindKey(k, 'summary');
@@ -168,21 +226,17 @@ export function getInsightMetricLabel(insight: Insight, t: TFn, te: TeFn): strin
     opening_worst_frequent: 'insights.metrics.winrate',
     opening_rare_gem: 'insights.metrics.winrate',
     opening_dependency: 'insights.metrics.gameShare',
-    opening_color_split: 'insights.metrics.winrateGapPp',
-    opening_trend: 'insights.metrics.trendDeltaPp',
+    opening_color_split: 'insights.metrics.winrateGap',
     time_control_best: 'insights.metrics.winrate',
     time_control_worst: 'insights.metrics.winrate',
     time_rating_growth_30d: 'insights.metrics.ratingDelta',
     time_morning_vs_evening: 'insights.metrics.winrateBestSlot',
     tactics_late_game_losses: 'insights.metrics.shareOfGames',
-    tactics_side_performance: 'insights.metrics.winrateGapPp',
-    tactics_middlegame_vs_endgame: 'insights.metrics.endgameErrorShare',
-    tactics_conversion_advantage: 'insights.metrics.failedToWinPct',
+    tactics_side_performance: 'insights.metrics.winrateGap',
+    tactics_conversion_advantage: 'insights.metrics.missedWins',
     tactics_accuracy_by_phase: 'insights.metrics.weakestPhaseAccuracy',
-    psychology_tilt: 'insights.metrics.winrate',
     psychology_comeback: 'insights.metrics.winrate',
-    psychology_rest_effect: 'insights.metrics.accuracyDropPp',
-    opponent_rating_performance: 'insights.metrics.winrateVsStronger',
+    psychology_rest_effect: 'insights.metrics.accuracyDrop',
     time_games_per_day_pattern: 'insights.metrics.winrateLightDays',
   };
   const labelKey = map[k];
