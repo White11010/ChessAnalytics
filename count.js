@@ -5,7 +5,7 @@ import path from 'path';
 
 const ROOT_DIRS = ['src', 'src-tauri'];
 
-const ALLOWED_EXTENSIONS = new Set(['.vue', '.js', '.ts', '.css', '.rs', '.json']);
+const ALLOWED_EXTENSIONS = new Set(['.vue', '.js', '.ts', '.css', '.rs']);
 
 const IGNORED_DIRS = new Set(['node_modules', 'target', '.git', 'dist', 'build']);
 
