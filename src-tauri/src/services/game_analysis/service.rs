@@ -45,14 +45,19 @@ pub fn analyze_game_transient(
         return Err("No moves stored for this game".into());
     }
 
-    let uci_moves: Vec<String> = moves_str.split_whitespace().map(|s| s.to_string()).collect();
+    let uci_moves: Vec<String> = moves_str
+        .split_whitespace()
+        .map(|s| s.to_string())
+        .collect();
     let player_is_white = game.player_color == "white";
 
     ensure_engine_started(app)?;
 
     let global = get_engine();
     let mut guard = global.lock().map_err(|_| "Failed to lock engine mutex")?;
-    let engine = guard.as_mut().expect("engine present after ensure_engine_started");
+    let engine = guard
+        .as_mut()
+        .expect("engine present after ensure_engine_started");
 
     let eval_history = analyze_eval_history(engine, &uci_moves, player_is_white, depth)?;
     let classified = classify_player_moves_from_eval(&uci_moves, &eval_history, player_is_white)?;
@@ -104,16 +109,12 @@ pub fn get_similar_games(app: &AppHandle, game_id: &str) -> Result<SimilarGames,
     }
 
     let user_id = stored.analysis.user_id.as_str();
-    let broad = ga_repo::find_similar_by_tags(&conn, user_id, game_id, 20).map_err(|e| e.to_string())?;
+    let broad =
+        ga_repo::find_similar_by_tags(&conn, user_id, game_id, 20).map_err(|e| e.to_string())?;
 
-    let key_moments: Vec<super::model::KeyMoment> = serde_json::from_str(
-        stored
-            .analysis
-            .key_moments_json
-            .as_deref()
-            .unwrap_or("[]"),
-    )
-    .unwrap_or_default();
+    let key_moments: Vec<super::model::KeyMoment> =
+        serde_json::from_str(stored.analysis.key_moments_json.as_deref().unwrap_or("[]"))
+            .unwrap_or_default();
 
     // First picked moment is the primary narrative hook; narrow matches reuse that moment type across the library.
     let narrow_kind = key_moments
@@ -158,14 +159,12 @@ fn stored_to_full(stored: ga_repo::GameAnalysisStored) -> Result<GameAnalysisFul
         game_id: stored.analysis.game_id.clone(),
         status: stored.analysis.status.clone(),
         depth: stored.analysis.depth as u8,
-        key_moments: serde_json::from_str(stored.analysis.key_moments_json.as_deref().unwrap_or("[]"))
-            .unwrap_or_default(),
+        key_moments: serde_json::from_str(
+            stored.analysis.key_moments_json.as_deref().unwrap_or("[]"),
+        )
+        .unwrap_or_default(),
         key_insight: serde_json::from_str(
-            stored
-                .analysis
-                .key_insight_json
-                .as_deref()
-                .unwrap_or("{}"),
+            stored.analysis.key_insight_json.as_deref().unwrap_or("{}"),
         )
         .unwrap_or(KeyInsight {
             title: "…".into(),
@@ -192,11 +191,7 @@ fn stored_to_full(stored: ga_repo::GameAnalysisStored) -> Result<GameAnalysisFul
             secondary_wr_pct: 0.0,
         }),
         eval_history: serde_json::from_str(
-            stored
-                .analysis
-                .eval_history_json
-                .as_deref()
-                .unwrap_or("[]"),
+            stored.analysis.eval_history_json.as_deref().unwrap_or("[]"),
         )
         .unwrap_or_default(),
         accuracy: stored.analysis.accuracy.unwrap_or(0.0),
@@ -216,7 +211,11 @@ fn stored_to_full(stored: ga_repo::GameAnalysisStored) -> Result<GameAnalysisFul
 }
 
 /// Full persist path for one game: engine run, tags, key moments, upsert row, then second-pass system_connection patch.
-pub fn analyze_game(app: &AppHandle, game_id: &str, depth: Option<u8>) -> Result<GameAnalysisFull, String> {
+pub fn analyze_game(
+    app: &AppHandle,
+    game_id: &str,
+    depth: Option<u8>,
+) -> Result<GameAnalysisFull, String> {
     let depth = depth.unwrap_or(14); // Default depth balances quality vs batch time for typical user libraries.
     let conn = get_conn(app)?;
     let user = users_repo::get_active_user(&conn)?.ok_or("Active user not found")?;
@@ -240,7 +239,10 @@ pub fn analyze_game(app: &AppHandle, game_id: &str, depth: Option<u8>) -> Result
         );
     }
 
-    let uci_moves: Vec<String> = moves_str.split_whitespace().map(|s| s.to_string()).collect();
+    let uci_moves: Vec<String> = moves_str
+        .split_whitespace()
+        .map(|s| s.to_string())
+        .collect();
 
     let player_is_white = game.player_color == "white";
 
@@ -248,10 +250,13 @@ pub fn analyze_game(app: &AppHandle, game_id: &str, depth: Option<u8>) -> Result
 
     let global = get_engine();
     let mut guard = global.lock().map_err(|_| "Failed to lock engine mutex")?;
-    let engine = guard.as_mut().expect("engine present after ensure_engine_started");
+    let engine = guard
+        .as_mut()
+        .expect("engine present after ensure_engine_started");
 
     let eval_history = analyze_eval_history(engine, &uci_moves, player_is_white, depth)?;
-    let classified = classify_player_moves(engine, &uci_moves, &eval_history, player_is_white, depth)?;
+    let classified =
+        classify_player_moves(engine, &uci_moves, &eval_history, player_is_white, depth)?;
 
     let acpl = avg_centipawn_loss(&classified);
     let accuracy = accuracy_from_acpl(acpl);
@@ -392,20 +397,16 @@ pub fn analyze_pending_games(app: AppHandle, depth: Option<u8>) -> Result<(), St
     }
 
     // High cap drains backlog in one run; UI still cancels mid-loop; oldest-first ordering avoids starving old games.
-    let pending = ga_repo::get_pending_game_ids(&conn, &user.username, 10_000)
-        .map_err(|e| e.to_string())?;
+    let pending =
+        ga_repo::get_pending_game_ids(&conn, &user.username, 10_000).map_err(|e| e.to_string())?;
 
     if BATCH_RUNNING
         .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
         .is_err()
     {
-        let _ = app.emit(
-            "game-analysis://batch-busy",
-            serde_json::json!({}),
-        );
+        let _ = app.emit("game-analysis://batch-busy", serde_json::json!({}));
         return Err(
-            "Game analysis batch is already running. Wait for it to finish or cancel it."
-                .into(),
+            "Game analysis batch is already running. Wait for it to finish or cancel it.".into(),
         );
     }
 

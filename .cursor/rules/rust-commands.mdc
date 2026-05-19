@@ -1,0 +1,36 @@
+---
+description: Rules for Rust Tauri commands. Apply when editing src-tauri/**/*.rs files.
+globs: ["src-tauri/**/*.rs"]
+---
+
+# Rust Tauri Commands
+
+## Command signature
+```rust
+#[tauri::command]
+async fn command_name(
+    state: tauri::State<'_, AppState>,
+    param: ParamType,
+) -> Result<ReturnType, String> {
+```
+- Always `async`. Always `Result<T, String>`.
+- Convert errors with `.map_err(|e| e.to_string())` — no `.unwrap()`, no `.expect()`.
+- Register every new command in `main.rs` `.invoke_handler(tauri::generate_handler![...])`.
+
+## State
+- Shared state via `tauri::State<'_, T>` — never global statics.
+- Wrap mutable state in `Arc<Mutex<T>>` or `Arc<RwLock<T>>`.
+- Prefer `RwLock` for read-heavy state.
+
+## Error handling
+- Return `Err(string)` for recoverable errors, not panics.
+- Use `?` operator inside commands to propagate errors cleanly.
+- No `unwrap()` in command bodies. In tests, `unwrap()` is acceptable.
+
+## File / IO
+- All paths go through `tauri::api::path` resolvers — no hardcoded absolute paths.
+- Use `tokio::fs` for async file ops inside async commands.
+
+## New files
+- One module = one file. Register in `mod.rs` or `main.rs`.
+- Don't add `pub` to everything — only expose what the command surface needs.

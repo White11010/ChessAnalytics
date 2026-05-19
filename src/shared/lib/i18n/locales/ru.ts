@@ -7,7 +7,7 @@ export default {
     emDash: '—',
   },
   gameDetails: {
-    patternsCardTitle: 'Паттерны и связь с системой',
+    patternsCardTitle: 'Паттерны',
     patternTagsLabel: 'Теги паттернов',
     noPatternTags: 'Для этой партии тегов паттернов нет.',
     systemConnectionLabel: 'Связь с системой',

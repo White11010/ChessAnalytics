@@ -1,22 +1,32 @@
 <template>
-  <v-card>
-    <v-card-title>{{ t('analysis.evalHistoryTitle') }}</v-card-title>
-    <v-card-text>
+  <v-card class="h-100 d-flex flex-column game-eval-history">
+    <v-card-item class="pb-0">
+      <v-card-title class="text-subtitle-1 font-weight-semibold pa-0">
+        {{ t('analysis.evalHistoryTitle') }}
+      </v-card-title>
+    </v-card-item>
+    <v-card-text class="flex-grow-1 d-flex flex-column game-eval-history__body">
       <apexchart
         v-if="series[0].data.length"
         type="line"
-        height="300"
+        class="flex-grow-1"
+        :height="chartHeight"
         :options="chartOptions"
         :series="series"
       />
-      <v-alert v-else type="info" variant="tonal">{{ t('analysis.evalHistoryEmpty') }}</v-alert>
+      <v-alert
+        v-else
+        type="info"
+        variant="tonal"
+        class="flex-grow-1 d-flex align-center justify-center"
+      >
+        {{ t('analysis.evalHistoryEmpty') }}
+      </v-alert>
     </v-card-text>
   </v-card>
 </template>
 
 <script setup lang="ts">
-// Composite widget: presents a focused dashboard block; reads shared Pinia stores and Tauri invoke where needed.
-
 import { computed } from 'vue';
 import { useTheme } from 'vuetify';
 
@@ -30,10 +40,12 @@ const props = defineProps<{
 const { t } = useI18n();
 const theme = useTheme();
 
+const chartHeight = '400px';
+
 const isDark = computed(() => theme.global.current.value.dark);
 const textColor = computed(() => theme.current.value.colors['on-surface']);
 const borderColor = computed(() => theme.current.value.colors.outline);
-const lineColor = computed(() => theme.current.value.colors.primary);
+const lineColor = computed(() => theme.current.value.colors.secondary);
 
 const series = computed(() => [
   {
@@ -77,3 +89,9 @@ const chartOptions = computed(() => ({
   },
 }));
 </script>
+
+<style scoped lang="scss">
+.game-eval-history__body {
+  min-height: 280px;
+}
+</style>

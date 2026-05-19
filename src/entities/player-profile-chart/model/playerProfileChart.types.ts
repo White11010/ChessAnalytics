@@ -12,6 +12,7 @@ export interface PlayerProfileChartResponse {
   ratingUsed: number | null;
   bucketLabel: string;
   benchmark: PentagonDto;
+  benchmarkAcplAvg: number;
   player: PentagonDto | null;
   sampleSize: number;
 }

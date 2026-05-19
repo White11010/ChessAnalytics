@@ -1,0 +1,28 @@
+---
+description: Core behavior rules. Apply to every request in this project.
+alwaysApply: true
+---
+
+# Agent Behavior
+
+## Output discipline
+- Write code only. No explanations unless explicitly asked ("explain why").
+- No alternatives. Pick the best approach and implement it.
+- No "I'll now..." or "Here's the..." preamble. Start with the code or answer.
+- No summary after the code block ("This implementation does X...").
+- If something is already working, don't touch it.
+
+## Scope control
+- Edit only files relevant to the request. Never refactor adjacent code opportunistically.
+- Minimal diffs: change only what is needed. Preserve surrounding code style.
+- If a new file is needed, confirm the path before creating.
+
+## Clarification
+- If the task is ambiguous in a way that would cause a wrong implementation, ask ONE question.
+- Never ask multiple clarifying questions at once.
+- If the intent is 80% clear, implement and note the assumption inline as a one-line comment.
+
+## Comments
+- No JSDoc, no block comments, no "// Step 1:" narration.
+- Only add comments when logic is genuinely non-obvious (a tricky algorithm, a workaround).
+- Never comment what the code visibly does.

@@ -5,7 +5,6 @@
         <v-card
           class="insight-card h-100 overflow-hidden position-relative d-flex flex-column"
           :variant="isFeatured(item) ? 'tonal' : 'elevated'"
-          :color="isFeatured(item) ? 'secondary' : undefined"
         >
           <v-sheet
             class="position-absolute start-0 top-0 bottom-0"
@@ -15,12 +14,7 @@
           />
           <v-card-item class="ps-6 flex-shrink-0">
             <div class="d-flex flex-wrap align-center ga-2 mb-2">
-              <v-chip
-                v-if="isFeatured(item)"
-                color="secondary"
-                size="small"
-                variant="flat"
-              >
+              <v-chip v-if="isFeatured(item)" color="secondary" size="small" variant="flat">
                 <v-icon icon="mdi-star" start size="16" />
                 {{ t('insightsPage.featuredBadge') }}
               </v-chip>
@@ -57,10 +51,7 @@
               <div v-if="deltaCaption(item)" class="text-caption text-medium-emphasis mb-2">
                 {{ deltaCaption(item) }}
               </div>
-              <p
-                class="mb-1"
-                :class="{ 'insight-summary--preline': summaryUsesPreLine(item) }"
-              >
+              <p class="mb-1" :class="{ 'insight-summary--preline': summaryUsesPreLine(item) }">
                 {{ getInsightSummary(item, t, te) }}
               </p>
               <p v-if="recommendationText(item)" class="text-body-2 text-medium-emphasis mb-0">

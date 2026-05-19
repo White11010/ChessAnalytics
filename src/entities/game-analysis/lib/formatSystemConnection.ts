@@ -3,6 +3,30 @@ import type { SystemConnection } from '../model/gameAnalysis.types';
 type TFn = (key: string, ...args: unknown[]) => string;
 type TeFn = (key: string) => boolean;
 
+export function isSystemConnectionProminent(sc: SystemConnection): boolean {
+  return (sc.primary_variant ?? '').trim() === 'similar_high';
+}
+
+export function getSystemConnectionTitle(
+  sc: SystemConnection,
+  t: TFn,
+  te: TeFn,
+): string | null {
+  if (!isSystemConnectionProminent(sc)) {
+    return null;
+  }
+  const k = 'analysis.systemConnection.similarHighTitle';
+  return te(k) ? t(k) : null;
+}
+
+export function getSystemConnectionCta(sc: SystemConnection, t: TFn, te: TeFn): string | null {
+  if (!isSystemConnectionProminent(sc)) {
+    return null;
+  }
+  const k = 'analysis.systemConnection.similarHighCta';
+  return te(k) ? t(k) : null;
+}
+
 export function getSystemConnectionPrimary(
   sc: SystemConnection,
   t: TFn,
@@ -23,7 +47,9 @@ export function getSystemConnectionPrimary(
   }
   if (variant === 'similar_high') {
     const k = 'analysis.systemConnection.similarHigh';
-    return te(k) ? t(k, { count: sc.count, window: sc.window }) : '';
+    return te(k)
+      ? t(k, { pattern: patternLabel(sc.tag), count: sc.count, window: sc.window })
+      : '';
   }
   return t('analysis.systemConnection.generic');
 }

@@ -90,13 +90,7 @@ pub fn upsert_analysis(
             ",
         )?;
         for m in moments {
-            stmt.execute(params![
-                m.game_id,
-                m.user_id,
-                m.ply,
-                m.kind,
-                m.swing_cp
-            ])?;
+            stmt.execute(params![m.game_id, m.user_id, m.ply, m.kind, m.swing_cp])?;
         }
     }
 
@@ -117,7 +111,10 @@ pub fn update_system_connection_json(
 }
 
 /// Loads main analysis row plus tags and moments for one game id, or None if no analysis row exists yet.
-pub fn get_analysis_stored(conn: &Connection, game_id: &str) -> rusqlite::Result<Option<GameAnalysisStored>> {
+pub fn get_analysis_stored(
+    conn: &Connection,
+    game_id: &str,
+) -> rusqlite::Result<Option<GameAnalysisStored>> {
     let analysis: Option<GameAnalysisRow> = {
         let mut stmt = conn.prepare(
             "
@@ -299,7 +296,9 @@ pub fn find_similar_by_tags(
         LIMIT ?3
         ",
     )?;
-    let rows = stmt.query_map(params![game_id, user_id, lim], |row| row.get::<_, String>(0))?;
+    let rows = stmt.query_map(params![game_id, user_id, lim], |row| {
+        row.get::<_, String>(0)
+    })?;
     let mut v = Vec::new();
     for r in rows {
         v.push(r?);
@@ -307,6 +306,7 @@ pub fn find_similar_by_tags(
     Ok(v)
 }
 
+/// TODO delete these query functions and use the `find_similar_by_tags` function instead.
 /// Games where the same moment `kind` appears (from game_key_moments), excluding `game_id`.
 pub fn find_similar_by_moment_kind(
     conn: &Connection,
@@ -327,7 +327,9 @@ pub fn find_similar_by_moment_kind(
         LIMIT ?4
         ",
     )?;
-    let rows = stmt.query_map(params![user_id, kind, game_id, lim], |row| row.get::<_, String>(0))?;
+    let rows = stmt.query_map(params![user_id, kind, game_id, lim], |row| {
+        row.get::<_, String>(0)
+    })?;
     let mut v = Vec::new();
     for r in rows {
         v.push(r?);
@@ -360,28 +362,31 @@ pub fn load_done_analyses_by_game_ids(
     );
 
     let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_from_iter(game_ids.iter().map(|s| s.as_str())), |row| {
-        Ok(GameAnalysisRow {
-            game_id: row.get(0)?,
-            user_id: row.get(1)?,
-            status: row.get(2)?,
-            depth: row.get(3)?,
-            accuracy: row.get(4)?,
-            avg_centipawn_loss: row.get(5)?,
-            max_advantage_cp: row.get(6)?,
-            min_advantage_cp: row.get(7)?,
-            blunders: row.get(8)?,
-            mistakes: row.get(9)?,
-            inaccuracies: row.get(10)?,
-            eval_history_json: row.get(11)?,
-            key_moments_json: row.get(12)?,
-            key_insight_json: row.get(13)?,
-            system_connection_json: row.get(14)?,
-            created_at: row.get(15)?,
-            updated_at: row.get(16)?,
-            error: row.get(17)?,
-        })
-    })?;
+    let rows = stmt.query_map(
+        params_from_iter(game_ids.iter().map(|s| s.as_str())),
+        |row| {
+            Ok(GameAnalysisRow {
+                game_id: row.get(0)?,
+                user_id: row.get(1)?,
+                status: row.get(2)?,
+                depth: row.get(3)?,
+                accuracy: row.get(4)?,
+                avg_centipawn_loss: row.get(5)?,
+                max_advantage_cp: row.get(6)?,
+                min_advantage_cp: row.get(7)?,
+                blunders: row.get(8)?,
+                mistakes: row.get(9)?,
+                inaccuracies: row.get(10)?,
+                eval_history_json: row.get(11)?,
+                key_moments_json: row.get(12)?,
+                key_insight_json: row.get(13)?,
+                system_connection_json: row.get(14)?,
+                created_at: row.get(15)?,
+                updated_at: row.get(16)?,
+                error: row.get(17)?,
+            })
+        },
+    )?;
 
     let mut map = HashMap::new();
     for r in rows {
@@ -412,15 +417,18 @@ pub fn load_key_moments_by_game_ids(
     );
 
     let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_from_iter(game_ids.iter().map(|s| s.as_str())), |row| {
-        Ok(KeyMomentRow {
-            game_id: row.get(0)?,
-            user_id: row.get(1)?,
-            ply: row.get(2)?,
-            kind: row.get(3)?,
-            swing_cp: row.get(4)?,
-        })
-    })?;
+    let rows = stmt.query_map(
+        params_from_iter(game_ids.iter().map(|s| s.as_str())),
+        |row| {
+            Ok(KeyMomentRow {
+                game_id: row.get(0)?,
+                user_id: row.get(1)?,
+                ply: row.get(2)?,
+                kind: row.get(3)?,
+                swing_cp: row.get(4)?,
+            })
+        },
+    )?;
 
     let mut v = Vec::new();
     for r in rows {

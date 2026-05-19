@@ -22,6 +22,8 @@ pub struct PhaseErrorShares {
 #[derive(Debug, Deserialize)]
 struct BucketRaw {
     label: String,
+    #[serde(default)]
+    acpl_avg: f64,
     pentagon: Pentagon,
     #[serde(default = "default_phase_error_opening")]
     phase_error_share_opening: f64,
@@ -108,6 +110,14 @@ pub fn bucket_key_for_rating(rating: i64) -> String {
 pub fn pentagon_and_label(bucket_key: &str) -> Option<(Pentagon, String)> {
     let d = data();
     d.buckets.get(bucket_key).map(|b| (b.pentagon.clone(), b.label.clone()))
+}
+
+/// Population average centipawn loss per move for the player's rating bucket.
+pub fn acpl_avg_for_rating(rating: i64) -> f64 {
+    let key = bucket_key_for_rating(rating);
+    let d = data();
+    let b = d.buckets.get(&key).or_else(|| d.buckets.values().next());
+    b.map(|b| b.acpl_avg).unwrap_or(100.0)
 }
 
 /// Population phase error-share norms (percent of key-moment errors) for the player's rating bucket.

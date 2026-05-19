@@ -62,3 +62,13 @@ export function benchmarkAccuracyRounded(
   }
   return Math.round(Number(b));
 }
+
+export function benchmarkAcplRounded(
+  payload: PlayerProfileChartResponse | null | undefined,
+): number | null {
+  const b = payload?.benchmarkAcplAvg;
+  if (b == null || Number.isNaN(b)) {
+    return null;
+  }
+  return Math.round(Number(b));
+}

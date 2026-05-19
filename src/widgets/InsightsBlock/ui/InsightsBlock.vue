@@ -16,7 +16,9 @@
     <v-row v-else dense>
       <v-col cols="12" sm="6" md="3">
         <v-card variant="tonal" class="h-100 pa-4 d-flex flex-column">
-          <div class="text-overline text-medium-emphasis">{{ t('insightsPage.kpiTotalLabel') }}</div>
+          <div class="text-overline text-medium-emphasis">
+            {{ t('insightsPage.kpiTotalLabel') }}
+          </div>
           <div class="text-h4 font-weight-bold mt-1">{{ insightsStore.items.length }}</div>
           <div class="text-caption text-medium-emphasis mt-2">
             {{ t('insightsPage.kpiTotalHint', { n: insightsStore.warningInsights.length }) }}
@@ -25,7 +27,9 @@
       </v-col>
       <v-col cols="12" sm="6" md="3">
         <v-card variant="tonal" class="h-100 pa-4 d-flex flex-column">
-          <div class="text-overline text-medium-emphasis">{{ t('insightsPage.kpiAccuracyLabel') }}</div>
+          <div class="text-overline text-medium-emphasis">
+            {{ t('insightsPage.kpiAccuracyLabel') }}
+          </div>
           <div class="text-h4 font-weight-bold mt-1">
             {{ avgAccuracyDisplay }}
           </div>
@@ -44,7 +48,9 @@
       </v-col>
       <v-col cols="12" sm="6" md="3">
         <v-card variant="tonal" class="h-100 pa-4 d-flex flex-column">
-          <div class="text-overline text-medium-emphasis">{{ t('insightsPage.kpiRatingLabel') }}</div>
+          <div class="text-overline text-medium-emphasis">
+            {{ t('insightsPage.kpiRatingLabel') }}
+          </div>
           <div
             class="text-h4 font-weight-bold mt-1"
             :class="ratingGrowthInsight ? 'text-success' : undefined"

@@ -207,6 +207,9 @@ export const appShellEn = {
     unknownOpening: 'Unknown opening',
     colorWhite: 'White',
     colorBlack: 'Black',
+    boardEmpty: 'Position unavailable — no moves or FEN',
+    playedAt: 'Played',
+    similarGameNotSynced: 'Not in local library',
   },
   game: {
     resultWin: 'Win',
@@ -383,9 +386,23 @@ export const appShellEn = {
     },
   },
   analysis: {
+    metricHint: {
+      blunders: '> 300 cp loss',
+      mistakes: '100–300 cp loss',
+    },
+    metricBenchmark: {
+      accuracyBelowUser: '↓ {delta}pp below your average ({avg}%)',
+      accuracyAboveUser: '↑ {delta}pp above your average ({avg}%)',
+      accuracyBelowRating: '↓ {delta}pp below rating average ({avg}%)',
+      accuracyAboveRating: '↑ {delta}pp above rating average ({avg}%)',
+      acplAboveUser: '↑ {delta} above your average ({avg})',
+      acplBelowUser: '↓ {delta} below your average ({avg})',
+      acplAboveRating: '↑ {delta} above rating average ({avg})',
+      acplBelowRating: '↓ {delta} below rating average ({avg})',
+    },
     overviewStats: {
       accuracy: 'Accuracy',
-      acpl: 'ACPL',
+      acpl: 'Avg. centipawn loss',
       blunders: 'Blunders',
       mistakes: 'Mistakes',
       inaccuracies: 'Inaccuracies',
@@ -404,7 +421,7 @@ export const appShellEn = {
     keyMomentBest: 'Best:',
     keyMomentSwing: 'Swing {cp} cp',
     similarGamesTitle: 'Similar games',
-    similarBroad: 'Broad similarity',
+    similarBroad: 'Similar games',
     similarNarrow: 'Narrow similarity',
     similarNoMatches: 'No matches',
     stateEmptyTitle: 'No analysis found for this game',
@@ -423,10 +440,14 @@ export const appShellEn = {
       good: 'Good',
     },
     keyMoment: {
-      headline: 'Move {move} — {kind}',
-      descLostPawns: 'You lost about {pawns} pawns of advantage here.',
+      headlineWithSwing: 'Move {move} — {kind} ({swing} cp)',
+      descThrewWinning: 'You threw away a winning position (−{pawns} pawns)',
+      descLostPawns: 'Critical mistake: lost {pawns} pawns here',
       descBrilliant: 'You found a strong continuation in a difficult position.',
-      descSwingCp: 'Eval swing {swing} centipawns.',
+      descSwingCp: 'Eval loss: {swing} cp ({pawns} pawns)',
+      movesLine: 'You played: {played} | Best: {best}',
+      movesLinePlayedOnly: 'Your move: {played}',
+      evalBeforeToAfter: 'Eval: {before} → {after}',
     },
     keyInsight: {
       fallbackTitle: 'Insight ({kind})',
@@ -434,7 +455,7 @@ export const appShellEn = {
       kinds: {
         lost_winning_position: {
           title: 'You lost a winning position',
-          description: 'You had about +{pawns} advantage but lost the game.',
+          description: 'You had +{pawns} pawns advantage but lost the game.',
         },
         missed_winning_chance: {
           title: 'Missed a decisive chance',
@@ -466,7 +487,7 @@ export const appShellEn = {
         },
         critical_moment: {
           title: 'Key moment decided the game',
-          description: 'Largest slip around move {move} (~{pawns} pawns).',
+          description: 'Largest slip on move {move} ({pawns} pawns).',
         },
         neutral: {
           title: 'Solid game',
@@ -482,7 +503,10 @@ export const appShellEn = {
       legacyHint: 'Re-run analysis to refresh pattern stats.',
       noTags: 'Play more rated games to unlock deeper pattern stats (window: {window} games).',
       similarLow: 'This pattern ({pattern}) shows up in your recent games — keep an eye on it.',
-      similarHigh: 'This pattern occurred {count} times in your last {window} similar games.',
+      similarHighTitle: 'Recurring pattern detected',
+      similarHigh:
+        'This pattern ({pattern}) occurred {count} times in your last {window} similar games.',
+      similarHighCta: "→ You're repeating the same mistake",
       secondaryRevisit:
         'You often revisit positions tagged “{pattern}” — review a few model games (sample: {total}).',
       secondaryWinRate: 'In {total} games with this profile you score about {pct}% (wins/draws).',

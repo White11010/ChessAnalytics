@@ -1,0 +1,67 @@
+---
+description: Rules for IPC layer and TypeScript services. Apply when editing src/**/*.ts files (excluding *.vue).
+globs: ['src/**/*.ts', 'src/**/*.d.ts']
+---
+
+# IPC & TypeScript Services
+
+## invoke() pattern — always this shape
+
+```ts
+import { invoke } from '@tauri-apps/api/core';
+
+export async function commandName(param: ParamType): Promise<ReturnType> {
+  return invoke<ReturnType>('command_name', { param });
+}
+```
+
+- Typed generic on `invoke<T>` — never untyped.
+- One exported function per Tauri command. No mega-service files.
+- File name matches domain: `fileService.ts`, `settingsService.ts`.
+
+## Composables (use\*.ts)
+
+```ts
+export function useFeature() {
+  const data = ref<Type | null>(null)
+  const error = ref<string | null>(null)
+  const loading = ref(false)
+
+  async function load() {
+    loading.value = true
+    error.value = null
+    try {
+      data.value = await commandName(...)
+    } catch (e) {
+      error.value = String(e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { data, error, loading, load }
+}
+```
+
+- Always expose `{ data, error, loading }` triad.
+- Never swallow errors silently.
+
+## Types
+
+- Shared types (matching Rust structs) in `src/types/` as `.d.ts` files.
+- Don't duplicate type definitions — import from `src/types/`.
+- `interface` for object shapes, `type` for unions/intersections.
+- No `any`. If Tauri returns unknown shape, type it explicitly.
+
+## Events (Tauri → frontend)
+
+```ts
+import { listen } from '@tauri-apps/api/event';
+
+const unlisten = await listen<PayloadType>('event-name', (event) => {
+  // handle event.payload
+});
+// cleanup: call unlisten() in onUnmounted
+```
+
+- Always store and call `unlisten()` on component unmount.

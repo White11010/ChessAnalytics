@@ -17,6 +17,7 @@ pub struct PlayerProfileChartResponse {
     pub rating_used: Option<i64>,
     pub bucket_label: String,
     pub benchmark: PentagonDto,
+    pub benchmark_acpl_avg: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub player: Option<PentagonDto>,
     pub sample_size: u32,
@@ -56,6 +57,7 @@ pub fn get_player_profile_chart(app: &AppHandle, speed: String) -> Result<Player
     let (bench_pentagon, bucket_label) = benchmarks::pentagon_and_label(&bucket_key)
         .ok_or_else(|| format!("Unknown benchmark bucket: {}", bucket_key))?;
     let benchmark = PentagonDto::from(bench_pentagon);
+    let benchmark_acpl_avg = benchmarks::acpl_avg_for_rating(rating_for_bucket);
 
     // Exclude older games so the chart reflects recent performance, not lifetime average mixed into one polygon.
     let cutoff = now_millis() - THIRTY_DAYS_MS;
@@ -126,6 +128,7 @@ pub fn get_player_profile_chart(app: &AppHandle, speed: String) -> Result<Player
         rating_used,
         bucket_label,
         benchmark,
+        benchmark_acpl_avg,
         player,
         sample_size,
     })

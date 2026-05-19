@@ -2,10 +2,19 @@ export {
   getKeyInsightDescription,
   getKeyInsightTitle,
 } from './lib/formatKeyInsight';
-export { getKeyMomentDescription, getKeyMomentHeadline } from './lib/formatKeyMoment';
 export {
+  formatSwingCp,
+  getKeyMomentDescription,
+  getKeyMomentEvalLine,
+  getKeyMomentHeadline,
+  getKeyMomentMovesLine,
+} from './lib/formatKeyMoment';
+export {
+  getSystemConnectionCta,
   getSystemConnectionPrimary,
   getSystemConnectionSecondary,
+  getSystemConnectionTitle,
+  isSystemConnectionProminent,
 } from './lib/formatSystemConnection';
 export { useGameAnalysisQuery } from './lib/gameAnalysisQuery';
 export { useGameAnalysisRunStore } from './model/gameAnalysisRun.store';

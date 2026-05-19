@@ -1,43 +1,35 @@
 <template>
-  <div class="game-details-page">
+  <div
+    class="game-details-page d-flex flex-column flex-1 h-100 min-h-0 overflow-y-auto overflow-x-hidden pa-5"
+  >
     <div class="game-details-page__container">
-      <v-container fluid>
-        <v-row class="mb-2">
-          <v-col cols="12">
-            <div class="d-flex align-center justify-space-between flex-wrap ga-2">
-              <h1 class="text-h4">{{ t('gameDetails.pageTitle') }}</h1>
-              <div class="d-flex ga-2">
-                <RunGameAnalysisButton
-                  v-if="!showAnalysisProgressUi"
-                  :game-id="gameId"
-                  @done="onAnalysisDone"
-                  @failed="onRunFailed"
-                />
-                <v-btn
-                  variant="tonal"
-                  color="secondary"
-                  prepend-icon="mdi-refresh"
-                  :loading="isFetching"
-                  @click="refetch"
-                >
-                  {{ t('gameDetails.refresh') }}
-                </v-btn>
-              </div>
-            </div>
-          </v-col>
-        </v-row>
-
-        <v-row v-if="game">
-          <v-col cols="12">
-            <GameDetailsHero :game="game" />
-          </v-col>
-        </v-row>
+      <v-container fluid class="pa-0">
+        <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-8">
+          <h1 class="text-h4 font-weight-bold mb-0">{{ t('gameDetails.pageTitle') }}</h1>
+          <div class="d-flex ga-2">
+            <RunGameAnalysisButton
+              v-if="!showAnalysisProgressUi"
+              :game-id="gameId"
+              @done="onAnalysisDone"
+              @failed="onRunFailed"
+            />
+            <v-btn
+              variant="flat"
+              color="secondary"
+              prepend-icon="mdi-refresh"
+              :loading="isFetching"
+              @click="refetch"
+            >
+              {{ t('gameDetails.refresh') }}
+            </v-btn>
+          </div>
+        </div>
 
         <v-row v-if="showAnalysisProgressUi">
           <v-col cols="12">
-            <v-card>
+            <v-card variant="outlined" rounded="lg">
               <v-card-text class="py-10 d-flex flex-column align-center text-center ga-4">
-                <v-progress-circular indeterminate color="primary" size="48" width="4" />
+                <v-progress-circular indeterminate color="secondary" size="48" width="4" />
                 <div>
                   <p class="text-h6 mb-1">{{ analysisProgressTitle }}</p>
                   <p class="text-body-2 text-medium-emphasis mb-0">
@@ -68,28 +60,27 @@
           </v-col>
         </v-row>
 
-        <template v-else-if="analysis">
-          <v-row>
-            <v-col cols="12">
-              <GameAnalysisOverview :analysis="analysis" />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" md="8">
-              <GameEvalHistory :analysis="analysis" />
-            </v-col>
-            <v-col cols="12" md="4">
-              <GamePatternsAndSystem :analysis="analysis" />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" md="8">
-              <GameKeyMoments :analysis="analysis" />
-            </v-col>
-            <v-col cols="12" md="4">
-              <GameSimilarGames :analysis="analysis" />
-            </v-col>
-          </v-row>
+        <template v-else-if="analysis && game">
+          <div class="game-details-grid">
+            <GameDetailsHero :game="game" class="game-details-grid__sidebar" />
+
+            <div class="game-details-main">
+              <GameKeyInsightCard :analysis="analysis" />
+              <GameMetricsGrid :analysis="analysis" :game="game" />
+
+              <div class="game-details-analysis">
+                <GameEvalHistory :analysis="analysis" class="game-details-analysis__chart" />
+                <div class="game-details-side-stack">
+                  <GamePatternsAndSystem :analysis="analysis" />
+                  <GameKeyMoments :analysis="analysis" class="flex-grow-1" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8">
+            <GameSimilarGames :analysis="analysis" />
+          </div>
         </template>
       </v-container>
     </div>
@@ -97,8 +88,6 @@
 </template>
 
 <script setup lang="ts">
-// Route-level page: composes features/widgets for this screen and wires page-local queries or navigation.
-
 import { storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 import { useI18n } from '@/shared/lib/i18n';
@@ -113,10 +102,11 @@ import {
 import { useSyncGamesQuery } from '@/entities/game';
 import { GameAnalysisState } from '@/features/GameAnalysisState';
 import { RunGameAnalysisButton } from '@/features/RunGameAnalysis';
-import { GameAnalysisOverview } from '@/widgets/GameAnalysisOverview';
 import { GameDetailsHero } from '@/widgets/GameDetailsHero';
 import { GameEvalHistory } from '@/widgets/GameEvalHistory';
+import { GameKeyInsightCard } from '@/widgets/GameKeyInsightCard';
 import { GameKeyMoments } from '@/widgets/GameKeyMoments';
+import { GameMetricsGrid } from '@/widgets/GameMetricsGrid';
 import { GamePatternsAndSystem } from '@/widgets/GamePatternsAndSystem';
 import { GameSimilarGames } from '@/widgets/GameSimilarGames';
 
@@ -138,7 +128,6 @@ const analysis = computed(() => data.value || null);
 const { backgroundAnalysisEnabled } = storeToRefs(useAnalysisSettingsStore());
 const { runningGameId } = storeToRefs(useGameAnalysisRunStore());
 
-/** Same idea as MyGames list loaders: bg analysis on and no finished analysis row yet (or still pending). */
 const lacksCompletedAnalysis = computed(() => {
   const a = analysis.value;
   if (a?.status === 'done') {
@@ -213,19 +202,72 @@ function onRunFailed(message: string) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .game-details-page {
-  padding: 1.25rem;
-
   width: 100%;
   flex: 1;
   height: 100%;
   overflow-y: auto;
+  padding: 1.25rem;
 
   &__container {
-    padding: 2rem;
-    max-width: 100rem;
-    margin: 0 auto;
+    // max-width: 87.5rem;
+    // margin: 0 auto;
+    // padding: 2rem;
+  }
+}
+
+.game-details-grid {
+  display: grid;
+  grid-template-columns: min(380px, 100%) 1fr;
+  gap: 32px;
+  align-items: stretch;
+}
+
+.game-details-grid__sidebar {
+  position: sticky;
+  top: 24px;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.game-details-main {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.game-details-analysis {
+  display: grid;
+  grid-template-columns: 1fr min(500px, 100%);
+  gap: 24px;
+  flex: 1;
+  min-height: 400px;
+  align-items: stretch;
+}
+
+.game-details-side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+}
+
+@media (max-width: 1280px) {
+  .game-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .game-details-grid__sidebar {
+    position: static;
+  }
+
+  .game-details-analysis {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -1,0 +1,37 @@
+---
+description: Rules for Vue SFC components. Apply when editing *.vue files.
+globs: ["**/*.vue"]
+---
+
+# Vue Components (Tauri/Vue 3 + TypeScript)
+
+## Structure — always in this order
+```
+<script setup lang="ts">
+<template>
+<style scoped>
+```
+No Options API. No class components.
+
+## Script
+- `defineProps` with explicit TypeScript types, not runtime validators.
+- `defineEmits` typed: `defineEmits<{ update: [value: string] }>()`.
+- Composables for logic > 15 lines. Don't inline complex logic in setup.
+- `ref` for primitives, `reactive` for objects — don't mix arbitrarily.
+- No `any`. Use `unknown` + type guard if type is unclear.
+
+## Template
+- One root element or Fragment (`<template>` wrapper), never extra `<div>` wrappers.
+- `v-for` always has `:key`. Key must be a stable id, not index.
+- No logic in template beyond ternary. Extract to computed if longer.
+- Event handlers: `@click="handler"` — no inline lambdas unless one-liner.
+
+## IPC calls from components
+- Never call `invoke()` directly inside a component.
+- All `invoke()` calls go in composables (`use*.ts`) or a service file.
+- Handle loading/error state at the composable level, not in the template.
+
+## Styles
+- `scoped` always.
+- CSS variables for colors/spacing — no hardcoded hex or px magic numbers.
+- No `!important`.

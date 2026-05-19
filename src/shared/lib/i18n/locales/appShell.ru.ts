@@ -1,8 +1,8 @@
 /** RU mirror of appShell.en.ts — keys must match. */
 export const appShellRu = {
   layout: {
-    brandTitle: 'ChessLens',
-    brandSubtitle: 'Платформа аналитики',
+    brandTitle: 'Blindspot',
+    brandSubtitle: 'Your Chess Patterns',
     navHome: 'Главная',
     navInsights: 'Инсайты',
     navMyGames: 'Мои партии',
@@ -208,6 +208,9 @@ export const appShellRu = {
     unknownOpening: 'Дебют неизвестен',
     colorWhite: 'Белые',
     colorBlack: 'Чёрные',
+    boardEmpty: 'Позиция недоступна — нет ходов или FEN',
+    playedAt: 'Дата партии',
+    similarGameNotSynced: 'Нет в локальной базе',
   },
   game: {
     resultWin: 'Победа',
@@ -286,10 +289,8 @@ export const appShellRu = {
           '{opening}: ↑ {wr_prev_pct}% → {wr_recent_pct}% за 30 дней ({n_prev} → {n_recent} партий).',
         summaryDeclined:
           '{opening}: ↓ {wr_prev_pct}% → {wr_recent_pct}% за 30 дней ({n_prev} → {n_recent} партий).',
-        shortTermImproved:
-          '+{delta_short_abs}% за последние 2 недели — укрепляется.',
-        shortTermDeclined:
-          '−{delta_short_abs}% за последние 2 недели — ослабевает.',
+        shortTermImproved: '+{delta_short_abs}% за последние 2 недели — укрепляется.',
+        shortTermDeclined: '−{delta_short_abs}% за последние 2 недели — ослабевает.',
         shortTermFlat: 'За последние 2 недели — без заметных изменений.',
         recommendation: 'Закрепите то, что изменилось, или разберите просадку.',
       },
@@ -360,8 +361,7 @@ export const appShellRu = {
       },
       psychology_tilt: {
         title: 'Tilt-детектор',
-        summary:
-          'После 2 поражений подряд в 3-й партии выигрываешь {pct}% ({tilt_wins}/{tilt_n}).',
+        summary: 'После 2 поражений подряд в 3-й партии выигрываешь {pct}% ({tilt_wins}/{tilt_n}).',
         recommendation: 'Сделайте паузу или разминку после серии поражений.',
       },
       psychology_comeback: {
@@ -385,9 +385,23 @@ export const appShellRu = {
     },
   },
   analysis: {
+    metricHint: {
+      blunders: '> 300 сант. потеря',
+      mistakes: '100–300 сант. потеря',
+    },
+    metricBenchmark: {
+      accuracyBelowUser: '↓ {delta} п.п. ниже вашего среднего ({avg}%)',
+      accuracyAboveUser: '↑ {delta} п.п. выше вашего среднего ({avg}%)',
+      accuracyBelowRating: '↓ {delta} п.п. ниже среднего по рейтингу ({avg}%)',
+      accuracyAboveRating: '↑ {delta} п.п. выше среднего по рейтингу ({avg}%)',
+      acplAboveUser: '↑ {delta} выше вашего среднего ({avg})',
+      acplBelowUser: '↓ {delta} ниже вашего среднего ({avg})',
+      acplAboveRating: '↑ {delta} выше среднего по рейтингу ({avg})',
+      acplBelowRating: '↓ {delta} ниже среднего по рейтингу ({avg})',
+    },
     overviewStats: {
       accuracy: 'Точность',
-      acpl: 'ACPL',
+      acpl: 'Средняя потеря',
       blunders: 'Зевки',
       mistakes: 'Ошибки',
       inaccuracies: 'Неточности',
@@ -406,7 +420,7 @@ export const appShellRu = {
     keyMomentBest: 'Лучший:',
     keyMomentSwing: 'Сдвиг {cp} сант.',
     similarGamesTitle: 'Похожие партии',
-    similarBroad: 'Широкое сходство',
+    similarBroad: 'Похожие партии',
     similarNarrow: 'Узкое сходство',
     similarNoMatches: 'Нет совпадений',
     stateEmptyTitle: 'Анализ не найден',
@@ -425,10 +439,14 @@ export const appShellRu = {
       good: 'Хороший',
     },
     keyMoment: {
-      headline: 'Ход {move} — {kind}',
-      descLostPawns: 'Потеряно около {pawns} пешек преимущества.',
+      headlineWithSwing: 'Ход {move} — {kind} ({swing} сант.)',
+      descThrewWinning: 'Выброшена выигранная позиция (−{pawns} пеш.)',
+      descLostPawns: 'Критическая ошибка: потеряно {pawns} пеш. здесь',
       descBrilliant: 'Сильное продолжение в сложной позиции.',
-      descSwingCp: 'Сдвиг оценки {swing} сантипешек.',
+      descSwingCp: 'Потеря оценки: {swing} сант. ({pawns} пеш.)',
+      movesLine: 'Ваш ход: {played} | Лучший: {best}',
+      movesLinePlayedOnly: 'Ваш ход: {played}',
+      evalBeforeToAfter: 'Оценка: {before} → {after}',
     },
     keyInsight: {
       fallbackTitle: 'Инсайт ({kind})',
@@ -436,7 +454,7 @@ export const appShellRu = {
       kinds: {
         lost_winning_position: {
           title: 'Проиграна выигранная позиция',
-          description: 'Был перевес около +{pawns}, но партия проиграна.',
+          description: 'Был перевес +{pawns} пеш., но партия проиграна.',
         },
         missed_winning_chance: {
           title: 'Упущенный шанс',
@@ -468,7 +486,7 @@ export const appShellRu = {
         },
         critical_moment: {
           title: 'Ключевой момент',
-          description: 'Крупнейший просчёт около хода {move} (~{pawns} пешек).',
+          description: 'Крупнейший просчёт на ходу {move} ({pawns} пеш.).',
         },
         neutral: {
           title: 'Ровная партия',
@@ -484,7 +502,10 @@ export const appShellRu = {
       legacyHint: 'Перезапустите анализ, чтобы обновить статистику паттернов.',
       noTags: 'Сыграйте больше рейтинговых партий для глубокой статистики (окно: {window} партий).',
       similarLow: 'Паттерн «{pattern}» встречается в недавних партиях — следите за ним.',
-      similarHigh: 'Паттерн встретился {count} раз в последних {window} похожих партиях.',
+      similarHighTitle: 'Повторяющийся паттерн',
+      similarHigh:
+        'Паттерн «{pattern}» встречался {count} раз в последних {window} похожих партиях.',
+      similarHighCta: '→ Вы повторяете одну и ту же ошибку',
       secondaryRevisit:
         'Часто возвращаетесь к позициям «{pattern}» — разберите несколько эталонных партий (выборка: {total}).',
       secondaryWinRate: 'В {total} партиях с таким профилем винрейт около {pct}% (победы/ничьи).',

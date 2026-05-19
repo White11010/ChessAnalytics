@@ -1,0 +1,31 @@
+---
+description: Rules for debugging and bug-fix tasks. Apply when the request contains words like fix, bug, error, crash, broken, not working, issue.
+globs: []
+---
+
+# Bug Fix Behavior
+
+## Process
+1. Identify the ONE root cause. State it in one sentence before the fix.
+2. Fix only that. Don't improve surrounding code unless it's the direct cause.
+3. Don't rewrite the function/component — surgical edit only.
+
+## What not to do
+- Don't add error handling everywhere "while you're here".
+- Don't rename variables for style.
+- Don't extract to composable unless that's explicitly the fix.
+- Don't change types that aren't related to the bug.
+
+## IPC bugs
+- Check Rust command return type matches TypeScript `invoke<T>` generic first.
+- Check `tauri.conf.json` allowlist before assuming code is wrong.
+- For serialization errors: verify Rust struct derives `serde::Serialize`.
+
+## Vue reactivity bugs
+- Check if mutating object directly instead of replacing: use `obj.value = { ...obj.value, key: newVal }`.
+- `v-for` with wrong key causes reorder bugs — check key is stable id.
+- Computed returning undefined: check all reactive deps are initialized.
+
+## After the fix
+- No "I also noticed..." additions.
+- If there's a separate issue worth fixing, mention it in ONE line. Don't fix it.

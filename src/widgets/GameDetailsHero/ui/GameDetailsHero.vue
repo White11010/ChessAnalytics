@@ -1,51 +1,91 @@
 <template>
-  <v-card>
-    <v-card-title class="d-flex align-center justify-space-between flex-wrap ga-2">
-      <span>{{ t('gameDetails.snapshotTitle') }}</span>
-      <v-chip size="small" variant="tonal" color="secondary">
-        {{ heroTimestamp }}
-      </v-chip>
-    </v-card-title>
+  <div class="game-details-sidebar d-flex flex-column ga-5 h-100">
+    <v-card class="board-card">
+      <v-card-text class="pa-0 d-flex align-center justify-center">
+        <ChessStaticBoard
+          v-if="canShowBoard"
+          :fen="game.last_fen!"
+          :last-move="lastMove"
+          :orientation="game.player_color"
+          :winner="game.winner"
+          size="100%"
+        />
+        <v-sheet
+          v-else
+          rounded="lg"
+          class="board-placeholder d-flex flex-column align-center justify-center ga-2 text-center px-4"
+        >
+          <v-icon icon="mdi-chess-king" color="secondary" size="40" />
+          <span class="text-body-2 text-medium-emphasis">{{ t('gameDetails.boardEmpty') }}</span>
+        </v-sheet>
+      </v-card-text>
+    </v-card>
 
-    <v-card-text>
-      <v-row>
-        <v-col cols="12" md="4" class="d-flex justify-center">
-          <ChessStaticBoard
-            v-if="canShowBoard"
-            :fen="game.last_fen!"
-            :last-move="lastMove"
-            :orientation="game.player_color"
-            :winner="game.winner"
-            size="240px"
-          />
-          <v-sheet v-else rounded border class="d-flex align-center justify-center board-placeholder">
-            <v-icon icon="mdi-chess-king" color="secondary" size="36" />
-          </v-sheet>
-        </v-col>
+    <v-card class="info-card flex-grow-1 d-flex flex-column">
+      <v-card-text class="d-flex flex-column ga-3 flex-grow-1">
+        <div class="info-block">
+          <div class="info-label text-caption text-uppercase font-weight-bold text-medium-emphasis">
+            {{ t('gameDetails.listOpponent') }}
+          </div>
+          <div class="text-body-1 font-weight-semibold text-secondary">
+            {{ game.opponent_name }}
+          </div>
+        </div>
 
-        <v-col cols="12" md="8">
-          <v-list density="comfortable">
-            <v-list-item :title="t('gameDetails.listOpponent')" :subtitle="game.opponent_name" />
-            <v-list-item :title="t('gameDetails.listResult')" :subtitle="resultLabel" />
-            <v-list-item
-              :title="t('gameDetails.listOpening')"
-              :subtitle="game.opening_name || t('gameDetails.unknownOpening')"
-            />
-            <v-list-item
-              :title="t('gameDetails.listTimeControl')"
-              :subtitle="`${game.speed} • ${game.time_control}`"
-            />
-            <v-list-item :title="t('gameDetails.listColor')" :subtitle="colorLabel" />
-          </v-list>
-        </v-col>
-      </v-row>
-    </v-card-text>
-  </v-card>
+        <v-divider />
+
+        <div class="info-block">
+          <div class="info-label text-caption text-uppercase font-weight-bold text-medium-emphasis">
+            {{ t('gameDetails.listResult') }}
+          </div>
+          <div class="text-body-1 font-weight-semibold" :class="resultClass">{{ resultLabel }}</div>
+        </div>
+
+        <v-divider />
+
+        <div class="info-block">
+          <div class="info-label text-caption text-uppercase font-weight-bold text-medium-emphasis">
+            {{ t('gameDetails.listOpening') }}
+          </div>
+          <div class="text-body-2 font-weight-medium">
+            {{ game.opening_name || t('gameDetails.unknownOpening') }}
+          </div>
+        </div>
+
+        <v-divider />
+
+        <div class="info-block">
+          <div class="info-label text-caption text-uppercase font-weight-bold text-medium-emphasis">
+            {{ t('gameDetails.listTimeControl') }}
+          </div>
+          <div class="text-body-2 font-weight-medium">
+            {{ timeControlLabel }}
+          </div>
+        </div>
+
+        <v-divider />
+
+        <div class="info-block">
+          <div class="info-label text-caption text-uppercase font-weight-bold text-medium-emphasis">
+            {{ t('gameDetails.listColor') }}
+          </div>
+          <div class="text-body-2 font-weight-medium">{{ colorLabel }}</div>
+        </div>
+
+        <v-divider />
+
+        <div class="info-block mt-auto">
+          <div class="info-label text-caption text-uppercase font-weight-bold text-medium-emphasis">
+            {{ t('gameDetails.playedAt') }}
+          </div>
+          <div class="text-body-2 text-medium-emphasis">{{ playedAtLabel }}</div>
+        </div>
+      </v-card-text>
+    </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
-// Composite widget: presents a focused dashboard block; reads shared Pinia stores and Tauri invoke where needed.
-
 import { computed } from 'vue';
 import type { Key } from 'chessground/types';
 
@@ -58,11 +98,7 @@ const props = defineProps<{
   game: Game;
 }>();
 
-const { t, locale } = useI18n();
-
-const heroTimestamp = computed(() =>
-  formatTimestamp(props.game.created_at, { locale: locale.value }),
-);
+const { t, te, locale } = useI18n();
 
 const canShowBoard = computed(() => Boolean(props.game.last_fen && props.game.moves));
 
@@ -85,14 +121,50 @@ const resultLabel = computed(() => {
   return t('game.resultDraw');
 });
 
+const resultClass = computed(() => {
+  const r = props.game.player_result;
+  if (r === 'win') {
+    return 'text-success';
+  }
+  if (r === 'loss') {
+    return 'text-error';
+  }
+  return '';
+});
+
 const colorLabel = computed(() =>
   props.game.player_color === 'white' ? t('gameDetails.colorWhite') : t('gameDetails.colorBlack'),
+);
+
+const timeControlLabel = computed(() => {
+  const speedKey = `myGames.speed.${props.game.speed.toLowerCase()}`;
+  const speedLabel = te(speedKey) ? t(speedKey) : props.game.speed;
+  return `${speedLabel} · ${props.game.time_control}`;
+});
+
+const playedAtLabel = computed(() =>
+  formatTimestamp(props.game.created_at, { locale: locale.value }),
 );
 </script>
 
 <style scoped lang="scss">
+.board-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.board-card :deep(.v-card-text) {
+  aspect-ratio: 1;
+  width: 100%;
+}
+
 .board-placeholder {
-  width: 240px;
-  height: 240px;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.info-label {
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
 }
 </style>
