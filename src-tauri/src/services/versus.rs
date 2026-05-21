@@ -15,7 +15,7 @@ use crate::parsers::lichess_games;
 use crate::services::benchmarks;
 use crate::services::game_analysis::service::{analyze_game_transient, TransientAnalysisResult};
 use crate::services::versus_metrics::{
-    MetricGameRow, PentagonDto, effective_game_accuracy, pentagon_from_metrics,
+    effective_game_accuracy, pentagon_from_metrics, MetricGameRow, PentagonDto,
 };
 
 static VERSUS_CANCEL: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(false));
@@ -204,7 +204,9 @@ fn opening_score_pct(wins: i64, draws: i64, total: i64) -> f64 {
 }
 
 /// Groups per full `opening_name` into Lichess-style families (text before first `:`), returns merged totals plus child rows sorted by popularity.
-fn group_rows_into_families(rows: Vec<OpeningAggregateRow>) -> Vec<(OpeningAggregateRow, Vec<OpeningAggregateRow>)> {
+fn group_rows_into_families(
+    rows: Vec<OpeningAggregateRow>,
+) -> Vec<(OpeningAggregateRow, Vec<OpeningAggregateRow>)> {
     let mut groups: HashMap<String, Vec<OpeningAggregateRow>> = HashMap::new();
     for r in rows {
         let key = opening_family_label(&r.opening_name);
@@ -240,7 +242,10 @@ fn group_rows_into_families(rows: Vec<OpeningAggregateRow>) -> Vec<(OpeningAggre
 }
 
 /// Per full `opening_name` from Lichess: `(wins, draws, total)`.
-fn aggregate_openings(games: &[Game], player_color_filter: Option<&str>) -> HashMap<String, (i64, i64, i64)> {
+fn aggregate_openings(
+    games: &[Game],
+    player_color_filter: Option<&str>,
+) -> HashMap<String, (i64, i64, i64)> {
     let mut m: HashMap<String, (i64, i64, i64)> = HashMap::new();
     for g in games {
         if player_color_filter.is_some_and(|c| g.player_color != c) {
@@ -263,7 +268,10 @@ fn aggregate_openings(games: &[Game], player_color_filter: Option<&str>) -> Hash
     m
 }
 
-fn rows_to_cards_with_lines(buckets: Vec<(OpeningAggregateRow, Vec<OpeningAggregateRow>)>, take: usize) -> Vec<VersusOpeningCard> {
+fn rows_to_cards_with_lines(
+    buckets: Vec<(OpeningAggregateRow, Vec<OpeningAggregateRow>)>,
+    take: usize,
+) -> Vec<VersusOpeningCard> {
     let mut v: Vec<VersusOpeningCard> = buckets
         .into_iter()
         .filter(|(merged, _)| merged.total >= MIN_OPENING_GAMES_SHOW)
@@ -289,15 +297,20 @@ fn rows_to_cards_with_lines(buckets: Vec<(OpeningAggregateRow, Vec<OpeningAggreg
         })
         .collect();
     v.sort_by(|a, b| {
-        b.total
-            .cmp(&a.total)
-            .then_with(|| b.win_rate_pct.partial_cmp(&a.win_rate_pct).unwrap_or(std::cmp::Ordering::Equal))
+        b.total.cmp(&a.total).then_with(|| {
+            b.win_rate_pct
+                .partial_cmp(&a.win_rate_pct)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
     });
     v.truncate(take);
     v
 }
 
-fn map_agg_hash_to_cards(m: HashMap<String, (i64, i64, i64)>, take: usize) -> Vec<VersusOpeningCard> {
+fn map_agg_hash_to_cards(
+    m: HashMap<String, (i64, i64, i64)>,
+    take: usize,
+) -> Vec<VersusOpeningCard> {
     let rows: Vec<OpeningAggregateRow> = m
         .into_iter()
         .map(|(opening_name, (wins, draws, total))| {
@@ -344,7 +357,9 @@ fn aggregate_openings_by_family(
             continue;
         }
         if let Some(user) = h2h_active_user {
-            if !g.opponent_name.eq_ignore_ascii_case(user) && !g.opponent_id.eq_ignore_ascii_case(user) {
+            if !g.opponent_name.eq_ignore_ascii_case(user)
+                && !g.opponent_id.eq_ignore_ascii_case(user)
+            {
                 continue;
             }
         }
@@ -374,7 +389,12 @@ fn aggregate_openings_by_family(
 fn rows_to_family_map(rows: Vec<OpeningAggregateRow>) -> HashMap<String, OpeningFamilyTotals> {
     group_rows_into_families(rows)
         .into_iter()
-        .map(|(merged, _)| (merged.opening_name, (merged.wins, merged.draws, merged.total)))
+        .map(|(merged, _)| {
+            (
+                merged.opening_name,
+                (merged.wins, merged.draws, merged.total),
+            )
+        })
         .collect()
 }
 
@@ -414,10 +434,16 @@ fn mk_plan_entry(
     }
 }
 
-fn tier1_gap_params(self_sig: OpeningSignal, opp_sig: OpeningSignal) -> HashMap<String, serde_json::Value> {
+fn tier1_gap_params(
+    self_sig: OpeningSignal,
+    opp_sig: OpeningSignal,
+) -> HashMap<String, serde_json::Value> {
     let delta = self_sig.wr - opp_sig.wr;
     let mut m = HashMap::new();
-    m.insert("selfWr".into(), serde_json::json!(round_wr_pct(self_sig.wr)));
+    m.insert(
+        "selfWr".into(),
+        serde_json::json!(round_wr_pct(self_sig.wr)),
+    );
     m.insert("oppWr".into(), serde_json::json!(round_wr_pct(opp_sig.wr)));
     m.insert("selfGames".into(), serde_json::json!(self_sig.total));
     m.insert("oppGames".into(), serde_json::json!(opp_sig.total));
@@ -450,10 +476,37 @@ fn entry_strength(e: &VersusPlanEntry) -> f64 {
     }
 }
 
-fn collect_tier1_play(
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Direction {
+    Play,
+    Avoid,
+}
+
+fn sorted_top(mut candidates: Vec<(f64, VersusPlanEntry)>, dir: Direction) -> Vec<VersusPlanEntry> {
+    candidates.sort_by(|a, b| {
+        let ord = match dir {
+            Direction::Play => b.0.partial_cmp(&a.0),
+            Direction::Avoid => a.0.partial_cmp(&b.0),
+        };
+        ord.unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.1.title.cmp(&b.1.title))
+    });
+    candidates
+        .into_iter()
+        .take(GP_PLAN_ENTRIES_PER_LIST)
+        .map(|(_, e)| e)
+        .collect()
+}
+
+fn collect_tier1(
     self_by_family: &HashMap<String, OpeningFamilyTotals>,
     opp_by_family: &HashMap<String, OpeningFamilyTotals>,
+    direction: Direction,
 ) -> Vec<VersusPlanEntry> {
+    let (tier_label, reason_key) = match direction {
+        Direction::Play => ("play", "tier1GapPlay"),
+        Direction::Avoid => ("avoid", "tier1GapAvoid"),
+    };
     let mut candidates: Vec<(f64, VersusPlanEntry)> = Vec::new();
     for (family, self_totals) in self_by_family {
         let self_sig = signal_from_totals(*self_totals);
@@ -468,64 +521,20 @@ fn collect_tier1_play(
             continue;
         }
         let delta = self_sig.wr - opp_sig.wr;
-        if delta <= 0.0 {
-            continue;
-        }
-        candidates.push((
-            delta,
-            mk_plan_entry(
-                family.clone(),
-                "play",
-                1,
-                "tier1GapPlay",
-                tier1_gap_params(self_sig, opp_sig),
-                Some(self_sig.wr),
-                Some(opp_sig.wr),
-                self_sig.total.max(0) as u32,
-                opp_sig.total.max(0) as u32,
-            ),
-        ));
-    }
-    candidates.sort_by(|a, b| {
-        b.0.partial_cmp(&a.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.1.title.cmp(&b.1.title))
-    });
-    candidates
-        .into_iter()
-        .take(GP_PLAN_ENTRIES_PER_LIST)
-        .map(|(_, e)| e)
-        .collect()
-}
-
-fn collect_tier1_avoid(
-    self_by_family: &HashMap<String, OpeningFamilyTotals>,
-    opp_by_family: &HashMap<String, OpeningFamilyTotals>,
-) -> Vec<VersusPlanEntry> {
-    let mut candidates: Vec<(f64, VersusPlanEntry)> = Vec::new();
-    for (family, self_totals) in self_by_family {
-        let self_sig = signal_from_totals(*self_totals);
-        if self_sig.total < GP_TIER1_MIN_GAMES {
-            continue;
-        }
-        let Some(opp_totals) = opp_by_family.get(family) else {
-            continue;
+        let keep = match direction {
+            Direction::Play => delta > 0.0,
+            Direction::Avoid => delta < 0.0,
         };
-        let opp_sig = signal_from_totals(*opp_totals);
-        if opp_sig.total < GP_TIER1_MIN_GAMES {
-            continue;
-        }
-        let delta = self_sig.wr - opp_sig.wr;
-        if delta >= 0.0 {
+        if !keep {
             continue;
         }
         candidates.push((
             delta,
             mk_plan_entry(
                 family.clone(),
-                "avoid",
+                tier_label,
                 1,
-                "tier1GapAvoid",
+                reason_key,
                 tier1_gap_params(self_sig, opp_sig),
                 Some(self_sig.wr),
                 Some(opp_sig.wr),
@@ -534,70 +543,90 @@ fn collect_tier1_avoid(
             ),
         ));
     }
-    candidates.sort_by(|a, b| {
-        a.0.partial_cmp(&b.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.1.title.cmp(&b.1.title))
-    });
-    candidates
-        .into_iter()
-        .take(GP_PLAN_ENTRIES_PER_LIST)
-        .map(|(_, e)| e)
-        .collect()
+    sorted_top(candidates, direction)
 }
 
-fn collect_tier2_play(
+fn collect_tier2(
     self_by_family: &HashMap<String, OpeningFamilyTotals>,
     opp_by_family: &HashMap<String, OpeningFamilyTotals>,
+    direction: Direction,
 ) -> Vec<VersusPlanEntry> {
+    let (tier_label, self_reason, opp_reason) = match direction {
+        Direction::Play => ("play", "tier2SelfBest", "tier2OppWeak"),
+        Direction::Avoid => ("avoid", "tier2SelfWorst", "tier2OppStrong"),
+    };
+    let prefer_higher_self = direction == Direction::Play;
+    let prefer_higher_opp = direction == Direction::Avoid;
+
+    let pick_best_self = |reason: &'static str, prefer_higher: bool| -> Option<VersusPlanEntry> {
+        let mut best: Option<(f64, VersusPlanEntry)> = None;
+        for (family, totals) in self_by_family {
+            let sig = signal_from_totals(*totals);
+            if sig.total < GP_TIER23_MIN_GAMES {
+                continue;
+            }
+            let entry = mk_plan_entry(
+                family.clone(),
+                tier_label,
+                2,
+                reason,
+                self_only_params(sig),
+                Some(sig.wr),
+                None,
+                sig.total.max(0) as u32,
+                0,
+            );
+            let take = best.as_ref().is_none_or(|(wr, _)| {
+                if prefer_higher {
+                    sig.wr > *wr
+                } else {
+                    sig.wr < *wr
+                }
+            });
+            if take {
+                best = Some((sig.wr, entry));
+            }
+        }
+        best.map(|(_, e)| e)
+    };
+
+    let pick_best_opp = |reason: &'static str, prefer_higher: bool| -> Option<VersusPlanEntry> {
+        let mut best: Option<(f64, VersusPlanEntry)> = None;
+        for (family, totals) in opp_by_family {
+            let sig = signal_from_totals(*totals);
+            if sig.total < GP_TIER23_MIN_GAMES {
+                continue;
+            }
+            let entry = mk_plan_entry(
+                family.clone(),
+                tier_label,
+                2,
+                reason,
+                opp_only_params(sig),
+                None,
+                Some(sig.wr),
+                0,
+                sig.total.max(0) as u32,
+            );
+            let take = best.as_ref().is_none_or(|(wr, _)| {
+                if prefer_higher {
+                    sig.wr > *wr
+                } else {
+                    sig.wr < *wr
+                }
+            });
+            if take {
+                best = Some((sig.wr, entry));
+            }
+        }
+        best.map(|(_, e)| e)
+    };
+
     let mut out = Vec::new();
-    let mut self_best: Option<(f64, VersusPlanEntry)> = None;
-    for (family, totals) in self_by_family {
-        let sig = signal_from_totals(*totals);
-        if sig.total < GP_TIER23_MIN_GAMES {
-            continue;
-        }
-        let entry = mk_plan_entry(
-            family.clone(),
-            "play",
-            2,
-            "tier2SelfBest",
-            self_only_params(sig),
-            Some(sig.wr),
-            None,
-            sig.total.max(0) as u32,
-            0,
-        );
-        if self_best.as_ref().is_none_or(|(wr, _)| sig.wr > *wr) {
-            self_best = Some((sig.wr, entry));
-        }
-    }
-    if let Some((_, e)) = self_best {
+    if let Some(e) = pick_best_self(self_reason, prefer_higher_self) {
         out.push(e);
     }
-
-    let mut opp_worst: Option<(f64, VersusPlanEntry)> = None;
-    for (family, totals) in opp_by_family {
-        let sig = signal_from_totals(*totals);
-        if sig.total < GP_TIER23_MIN_GAMES {
-            continue;
-        }
-        let entry = mk_plan_entry(
-            family.clone(),
-            "play",
-            2,
-            "tier2OppWeak",
-            opp_only_params(sig),
-            None,
-            Some(sig.wr),
-            0,
-            sig.total.max(0) as u32,
-        );
-        if opp_worst.as_ref().is_none_or(|(wr, _)| sig.wr < *wr) {
-            opp_worst = Some((sig.wr, entry));
-        }
-    }
-    if let Some((_, e)) = opp_worst {
+    if let Some(e) = pick_best_opp(opp_reason, prefer_higher_opp) {
         if !out.iter().any(|x| x.title == e.title) {
             out.push(e);
         }
@@ -606,67 +635,14 @@ fn collect_tier2_play(
     out
 }
 
-fn collect_tier2_avoid(
+fn collect_tier3(
     self_by_family: &HashMap<String, OpeningFamilyTotals>,
-    opp_by_family: &HashMap<String, OpeningFamilyTotals>,
+    direction: Direction,
 ) -> Vec<VersusPlanEntry> {
-    let mut out = Vec::new();
-    let mut self_worst: Option<(f64, VersusPlanEntry)> = None;
-    for (family, totals) in self_by_family {
-        let sig = signal_from_totals(*totals);
-        if sig.total < GP_TIER23_MIN_GAMES {
-            continue;
-        }
-        let entry = mk_plan_entry(
-            family.clone(),
-            "avoid",
-            2,
-            "tier2SelfWorst",
-            self_only_params(sig),
-            Some(sig.wr),
-            None,
-            sig.total.max(0) as u32,
-            0,
-        );
-        if self_worst.as_ref().is_none_or(|(wr, _)| sig.wr < *wr) {
-            self_worst = Some((sig.wr, entry));
-        }
-    }
-    if let Some((_, e)) = self_worst {
-        out.push(e);
-    }
-
-    let mut opp_best: Option<(f64, VersusPlanEntry)> = None;
-    for (family, totals) in opp_by_family {
-        let sig = signal_from_totals(*totals);
-        if sig.total < GP_TIER23_MIN_GAMES {
-            continue;
-        }
-        let entry = mk_plan_entry(
-            family.clone(),
-            "avoid",
-            2,
-            "tier2OppStrong",
-            opp_only_params(sig),
-            None,
-            Some(sig.wr),
-            0,
-            sig.total.max(0) as u32,
-        );
-        if opp_best.as_ref().is_none_or(|(wr, _)| sig.wr > *wr) {
-            opp_best = Some((sig.wr, entry));
-        }
-    }
-    if let Some((_, e)) = opp_best {
-        if !out.iter().any(|x| x.title == e.title) {
-            out.push(e);
-        }
-    }
-    out.truncate(GP_PLAN_ENTRIES_PER_LIST);
-    out
-}
-
-fn collect_tier3_play(self_by_family: &HashMap<String, OpeningFamilyTotals>) -> Vec<VersusPlanEntry> {
+    let (tier_label, reason) = match direction {
+        Direction::Play => ("play", "tier3SelfTop"),
+        Direction::Avoid => ("avoid", "tier3SelfBottom"),
+    };
     let mut candidates: Vec<(f64, VersusPlanEntry)> = Vec::new();
     for (family, totals) in self_by_family {
         let sig = signal_from_totals(*totals);
@@ -677,9 +653,9 @@ fn collect_tier3_play(self_by_family: &HashMap<String, OpeningFamilyTotals>) -> 
             sig.wr,
             mk_plan_entry(
                 family.clone(),
-                "play",
+                tier_label,
                 3,
-                "tier3SelfTop",
+                reason,
                 self_only_params(sig),
                 Some(sig.wr),
                 None,
@@ -688,83 +664,43 @@ fn collect_tier3_play(self_by_family: &HashMap<String, OpeningFamilyTotals>) -> 
             ),
         ));
     }
-    candidates.sort_by(|a, b| {
-        b.0.partial_cmp(&a.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.1.title.cmp(&b.1.title))
-    });
-    candidates
-        .into_iter()
-        .take(GP_PLAN_ENTRIES_PER_LIST)
-        .map(|(_, e)| e)
-        .collect()
-}
-
-fn collect_tier3_avoid(self_by_family: &HashMap<String, OpeningFamilyTotals>) -> Vec<VersusPlanEntry> {
-    let mut candidates: Vec<(f64, VersusPlanEntry)> = Vec::new();
-    for (family, totals) in self_by_family {
-        let sig = signal_from_totals(*totals);
-        if sig.total < GP_TIER23_MIN_GAMES {
-            continue;
-        }
-        candidates.push((
-            sig.wr,
-            mk_plan_entry(
-                family.clone(),
-                "avoid",
-                3,
-                "tier3SelfBottom",
-                self_only_params(sig),
-                Some(sig.wr),
-                None,
-                sig.total.max(0) as u32,
-                0,
-            ),
-        ));
-    }
-    candidates.sort_by(|a, b| {
-        a.0.partial_cmp(&b.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.1.title.cmp(&b.1.title))
-    });
-    candidates
-        .into_iter()
-        .take(GP_PLAN_ENTRIES_PER_LIST)
-        .map(|(_, e)| e)
-        .collect()
+    sorted_top(candidates, direction)
 }
 
 fn build_play_list(
     self_by_family: &HashMap<String, OpeningFamilyTotals>,
     opp_by_family: &HashMap<String, OpeningFamilyTotals>,
 ) -> Vec<VersusPlanEntry> {
-    let tier1 = collect_tier1_play(self_by_family, opp_by_family);
+    let tier1 = collect_tier1(self_by_family, opp_by_family, Direction::Play);
     if !tier1.is_empty() {
         return tier1;
     }
-    let tier2 = collect_tier2_play(self_by_family, opp_by_family);
+    let tier2 = collect_tier2(self_by_family, opp_by_family, Direction::Play);
     if !tier2.is_empty() {
         return tier2;
     }
-    collect_tier3_play(self_by_family)
+    collect_tier3(self_by_family, Direction::Play)
 }
 
 fn build_avoid_list(
     self_by_family: &HashMap<String, OpeningFamilyTotals>,
     opp_by_family: &HashMap<String, OpeningFamilyTotals>,
 ) -> Vec<VersusPlanEntry> {
-    let tier1 = collect_tier1_avoid(self_by_family, opp_by_family);
+    let tier1 = collect_tier1(self_by_family, opp_by_family, Direction::Avoid);
     if !tier1.is_empty() {
         return tier1;
     }
-    let tier2 = collect_tier2_avoid(self_by_family, opp_by_family);
+    let tier2 = collect_tier2(self_by_family, opp_by_family, Direction::Avoid);
     if !tier2.is_empty() {
         return tier2;
     }
-    collect_tier3_avoid(self_by_family)
+    collect_tier3(self_by_family, Direction::Avoid)
 }
 
-fn dedupe_plan_side(mut play: Vec<VersusPlanEntry>, mut avoid: Vec<VersusPlanEntry>) -> VersusPlanSide {
+fn dedupe_plan_side(
+    mut play: Vec<VersusPlanEntry>,
+    mut avoid: Vec<VersusPlanEntry>,
+) -> VersusPlanSide {
     let overlap: Vec<String> = play
         .iter()
         .filter(|p| avoid.iter().any(|a| a.title == p.title))
@@ -822,7 +758,10 @@ fn mean_accuracy(rows: &[MetricGameRow]) -> Option<f64> {
     if rows.is_empty() {
         return None;
     }
-    let s: f64 = rows.iter().map(|r| effective_game_accuracy(r.accuracy_raw, r.avg_centipawn_loss)).sum();
+    let s: f64 = rows
+        .iter()
+        .map(|r| effective_game_accuracy(r.accuracy_raw, r.avg_centipawn_loss))
+        .sum();
     Some(s / rows.len() as f64)
 }
 
@@ -887,7 +826,10 @@ fn filter_opponent_games_for_speed(parsed: &[Game], speed_lc: &str) -> Vec<Game>
         .filter(|g| {
             g.rated
                 && game_matches_requested_speed(&g.speed, speed_lc)
-                && g.moves.as_ref().map(|m| !m.trim().is_empty()).unwrap_or(false)
+                && g.moves
+                    .as_ref()
+                    .map(|m| !m.trim().is_empty())
+                    .unwrap_or(false)
         })
         .cloned()
         .collect();
@@ -918,12 +860,11 @@ fn prepare_versus_speed_slice(
 ) -> Result<VersusSpeedDraft, String> {
     let opponent_games_matching_speed = opp_games_speed.len() as u32;
 
-    let speed_hint =
-        if opponent_games_matching_speed == 0 && !distinct_speeds_hint.is_empty() {
-            Some(distinct_speeds_hint.to_vec())
-        } else {
-            None
-        };
+    let speed_hint = if opponent_games_matching_speed == 0 && !distinct_speeds_hint.is_empty() {
+        Some(distinct_speeds_hint.to_vec())
+    } else {
+        None
+    };
 
     let opp_rating = opp_games_speed.first().and_then(|g| g.player_rating);
     let self_rating = rating_for_speed_u(user, speed_lc);
@@ -953,10 +894,14 @@ fn prepare_versus_speed_slice(
         "black",
     )
     .map_err(|e| e.to_string())?;
-    let self_open_white =
-        rows_to_cards_with_lines(group_rows_into_families(self_white_agg.clone()), VERSUS_OPENINGS_PER_COLOR);
-    let self_open_black =
-        rows_to_cards_with_lines(group_rows_into_families(self_black_agg.clone()), VERSUS_OPENINGS_PER_COLOR);
+    let self_open_white = rows_to_cards_with_lines(
+        group_rows_into_families(self_white_agg.clone()),
+        VERSUS_OPENINGS_PER_COLOR,
+    );
+    let self_open_black = rows_to_cards_with_lines(
+        group_rows_into_families(self_black_agg.clone()),
+        VERSUS_OPENINGS_PER_COLOR,
+    );
 
     let bucket_you = benchmarks::bucket_key_for_rating(self_rating.unwrap_or(1500));
     let (bench_you_pent, _) = benchmarks::pentagon_and_label(&bucket_you)
@@ -1107,16 +1052,14 @@ pub async fn versus_compare(
     }
 
     let conn = get_conn(&app)?;
-    let user = users_repo::get_active_user(&conn)?
-        .ok_or("Active user not found")?;
+    let user = users_repo::get_active_user(&conn)?.ok_or("Active user not found")?;
 
     if opponent_slug.eq_ignore_ascii_case(user.username.trim()) {
         return Err("Choose an opponent other than yourself".into());
     }
 
     emit_prog(&app, "fetch_opponent", 0, 1);
-    let ndjson = lichess::fetch_games(&app, &opponent_slug, None, Some(LICHESS_FETCH_MAX))
-        .await?;
+    let ndjson = lichess::fetch_games(&app, &opponent_slug, None, Some(LICHESS_FETCH_MAX)).await?;
     emit_prog(&app, "fetch_opponent", 1, 1);
 
     let parsed_games = lichess_games::parse_ndjson(&opponent_slug, &ndjson);
@@ -1125,7 +1068,11 @@ pub async fn versus_compare(
     let mut distinct_speeds_rated_with_moves: Vec<String> = parsed_games
         .iter()
         .filter(|g| {
-            g.rated && g.moves.as_ref().map(|m| !m.trim().is_empty()).unwrap_or(false)
+            g.rated
+                && g.moves
+                    .as_ref()
+                    .map(|m| !m.trim().is_empty())
+                    .unwrap_or(false)
         })
         .map(|g| g.speed.trim().to_lowercase())
         .filter(|s| !s.is_empty())
@@ -1155,7 +1102,8 @@ pub async fn versus_compare(
         &filtered_by_speed[0],
         &distinct_speeds_rated_with_moves,
     )?;
-    let bullet = versus_finish_speed_slice(&app, bullet_draft, &mut prog_current, analyze_total).await?;
+    let bullet =
+        versus_finish_speed_slice(&app, bullet_draft, &mut prog_current, analyze_total).await?;
 
     let blitz_draft = prepare_versus_speed_slice(
         &conn,
@@ -1165,7 +1113,8 @@ pub async fn versus_compare(
         &filtered_by_speed[1],
         &distinct_speeds_rated_with_moves,
     )?;
-    let blitz = versus_finish_speed_slice(&app, blitz_draft, &mut prog_current, analyze_total).await?;
+    let blitz =
+        versus_finish_speed_slice(&app, blitz_draft, &mut prog_current, analyze_total).await?;
 
     let rapid_draft = prepare_versus_speed_slice(
         &conn,
@@ -1175,7 +1124,8 @@ pub async fn versus_compare(
         &filtered_by_speed[2],
         &distinct_speeds_rated_with_moves,
     )?;
-    let rapid = versus_finish_speed_slice(&app, rapid_draft, &mut prog_current, analyze_total).await?;
+    let rapid =
+        versus_finish_speed_slice(&app, rapid_draft, &mut prog_current, analyze_total).await?;
 
     emit_prog(&app, "analyze_opponent", analyze_total, analyze_total);
 
@@ -1190,7 +1140,11 @@ pub async fn versus_compare(
 
     Ok(VersusCompareResponse {
         opponent_games_in_api_sample,
-        slices: VersusSlices { bullet, blitz, rapid },
+        slices: VersusSlices {
+            bullet,
+            blitz,
+            rapid,
+        },
     })
 }
 
@@ -1200,7 +1154,12 @@ fn truncate_diag_err(s: &str, max_chars: usize) -> String {
     if t.chars().count() <= max_chars {
         return t.to_string();
     }
-    format!("{}…", t.chars().take(max_chars.saturating_sub(1)).collect::<String>())
+    format!(
+        "{}…",
+        t.chars()
+            .take(max_chars.saturating_sub(1))
+            .collect::<String>()
+    )
 }
 
 fn transient_to_metric(game: &Game, t: &TransientAnalysisResult) -> MetricGameRow {
@@ -1210,10 +1169,7 @@ fn transient_to_metric(game: &Game, t: &TransientAnalysisResult) -> MetricGameRo
         max_adv: Some(i64::from(t.max_advantage_cp)),
         blunders: Some(i64::from(t.blunders)),
         player_result: game.player_result.clone(),
-        opening_blunder: t
-            .pattern_tags
-            .iter()
-            .any(|tag| tag == "opening_blunder"),
+        opening_blunder: t.pattern_tags.iter().any(|tag| tag == "opening_blunder"),
         endgame_blunder: t.pattern_tags.iter().any(|tag| tag == "endgame_blunder"),
     }
 }
@@ -1281,12 +1237,7 @@ mod tests {
         assert!((c.lines[1].frequency_pct - (100.0 * 2.0 / 6.0)).abs() < 1e-9);
     }
 
-    fn test_game(
-        opening: &str,
-        color: &str,
-        result: &str,
-        opponent: &str,
-    ) -> Game {
+    fn test_game(opening: &str, color: &str, result: &str, opponent: &str) -> Game {
         Game {
             id: "g1".into(),
             username: "opp".into(),
@@ -1366,8 +1317,18 @@ mod tests {
             total: 5,
         }];
         let plan = build_game_plan(&games, "you", self_white, self_black);
-        let titles_play: HashSet<_> = plan.as_white.play.iter().map(|e| e.title.as_str()).collect();
-        let titles_avoid: HashSet<_> = plan.as_white.avoid.iter().map(|e| e.title.as_str()).collect();
+        let titles_play: HashSet<_> = plan
+            .as_white
+            .play
+            .iter()
+            .map(|e| e.title.as_str())
+            .collect();
+        let titles_avoid: HashSet<_> = plan
+            .as_white
+            .avoid
+            .iter()
+            .map(|e| e.title.as_str())
+            .collect();
         assert!(
             titles_play.intersection(&titles_avoid).count() == 0,
             "same family must not appear in play and avoid"
@@ -1394,7 +1355,11 @@ mod tests {
         assert_eq!(entry.reason_kind, "tier1GapPlay");
         assert!((entry.self_win_rate_pct.unwrap() - 100.0).abs() < 1e-9);
         assert!((entry.opp_win_rate_pct.unwrap() - 0.0).abs() < 1e-9);
-        let delta = entry.reason_params.get("delta").and_then(|v| v.as_i64()).unwrap();
+        let delta = entry
+            .reason_params
+            .get("delta")
+            .and_then(|v| v.as_i64())
+            .unwrap();
         assert_eq!(delta, 100);
     }
 
@@ -1416,7 +1381,11 @@ mod tests {
         assert_eq!(entry.title, "Sicilian Defense");
         assert_eq!(entry.selection_tier, 1);
         assert_eq!(entry.reason_kind, "tier1GapAvoid");
-        let delta = entry.reason_params.get("delta").and_then(|v| v.as_i64()).unwrap();
+        let delta = entry
+            .reason_params
+            .get("delta")
+            .and_then(|v| v.as_i64())
+            .unwrap();
         assert!(delta < 0);
     }
 
